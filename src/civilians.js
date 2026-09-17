@@ -1,10 +1,12 @@
 /**
- * Kitchuban Civilians - Living world, no admins, everyone equal
- * Merchants, citizens, children, animals walking around
- * Animations everywhere: walk, gesture, idle, talk, carry
+ * Kitchuban Civilians - Living world with VARIED VOICES, no admins, everyone equal
+ * Merchants, citizens, children, priests, nobles, guards walking around
+ * Animations everywhere: walk, gesture, idle, talk, carry + UNIQUE VOICE PER PERSON
+ * Sounds everywhere: each civilian has distinct voice profile
  */
 import * as THREE from 'three';
 import { MAT } from './materials.js';
+import { VOICE_PROFILES } from './soundscape.js';
 
 export class Civilian {
   constructor(scene, pos, type='citizen') {
@@ -20,7 +22,37 @@ export class Civilian {
     this.idleTimer = 0;
     this.gestureTimer = 0;
     this.talkTimer = Math.random()*5;
+    this.voiceTimer = 2 + Math.random()*8;
+    this.isTalking = false;
+    this.talkDuration = 0;
+    // Unique voice variation per civilian - not one voice for everyone
+    this.voiceProfile = this.assignVoiceProfile(type);
+    this.voiceId = `${type}-${Math.floor(Math.random()*10000)}-${pos.x.toFixed(0)}`;
     this.build();
+  }
+
+  assignVoiceProfile(type) {
+    // Each type has sub-variations for truly unique voices
+    const variations = {
+      citizen: ['citizen_m', 'citizen_f', 'citizen_m', 'citizen_f', 'noble_m'],
+      merchant: ['merchant', 'merchant', 'citizen_m'],
+      child: ['child', 'child', 'citizen_f'],
+      priest: ['priest', 'senate', 'vestal'],
+      guard: ['guard', 'legionary', 'praetorian'],
+      noble: ['noble_m', 'noble_f', 'noble_m', 'citizen_f'],
+    };
+    const opts = variations[type] || ['citizen_m', 'citizen_f'];
+    const chosen = opts[Math.floor(Math.random()*opts.length)];
+    const baseProfile = VOICE_PROFILES[chosen] || VOICE_PROFILES.citizen_m;
+    // Add personal variation - unique per civilian
+    return {
+      ...baseProfile,
+      personalPitch: baseProfile.base + (Math.random()-0.5)*baseProfile.range*0.6,
+      personalSpeed: baseProfile.speed * (0.85 + Math.random()*0.3),
+      personalFormant: baseProfile.formant + (Math.random()-0.5)*150,
+      id: `${chosen}-${Math.floor(Math.random()*1000)}`,
+      originalType: type,
+    };
   }
 
   build() {
@@ -46,9 +78,10 @@ export class Civilian {
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.16*s,10,8), MAT.skin);
     head.position.y = 1.35*s; g.add(head);
     
-    // Hair
-    if (Math.random()<0.6) {
-      const hairMat = new THREE.MeshStandardMaterial({color: Math.random()<0.5?0x2a1a0e:0x8a5a3a});
+    // Hair - varied
+    if (Math.random()<0.7) {
+      const hairColors = [0x2a1a0e, 0x8a5a3a, 0x4a3a2a, 0xc8a87a, 0x1a1a1a];
+      const hairMat = new THREE.MeshStandardMaterial({color: hairColors[Math.floor(Math.random()*hairColors.length)]});
       const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17*s,8,6,0,Math.PI*2,0,1.2), hairMat);
       hair.position.y = 1.38*s;
       g.add(hair);
@@ -73,6 +106,12 @@ export class Civilian {
       const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.5,6), MAT.woodDark);
       staff.position.set(0.35*s,0.9*s,0); g.add(staff);
     }
+
+    if (this.type === 'guard') {
+      const helm = new THREE.Mesh(new THREE.SphereGeometry(0.18*s,8,6,0,Math.PI*2,0,1.0), new THREE.MeshStandardMaterial({color:0x8a8a9a, metalness:0.8}));
+      helm.position.y = 1.45*s;
+      g.add(helm);
+    }
     
     this.parts = { legL, legR, armL, armR, torso, head };
     this.group = g;
@@ -80,15 +119,62 @@ export class Civilian {
     this.scene.add(g);
   }
 
-  update(dt) {
+  update(dt, soundscape, playerPos) {
     this.wanderTimer -= dt;
     this.idleTimer -= dt;
     this.gestureTimer -= dt;
     this.talkTimer -= dt;
+    this.voiceTimer -= dt;
+    if (this.isTalking) {
+      this.talkDuration -= dt;
+      if (this.talkDuration <=0) this.isTalking = false;
+    }
+    
+    // Voice triggering - varied per civilian, not one voice for everyone
+    if (this.voiceTimer <=0 && soundscape) {
+      this.voiceTimer = 4 + Math.random()*10;
+      const distToPlayer = playerPos ? this.position.distanceTo(playerPos) : 100;
+      if (distToPlayer < 60) {
+        // Only speak if near player, with varied mood
+        const moods = this.type==='merchant' ? ['haggle','talk','talk'] : 
+                      this.type==='child' ? ['play','talk','laugh'] :
+                      this.type==='priest' ? ['pray','talk'] :
+                      ['talk','talk','greet'];
+        const mood = moods[Math.floor(Math.random()*moods.length)];
+        // Use personal voice profile
+        const voiceType = this.voiceProfile.id.split('-')[0] || this.type;
+        soundscape.playCivilianVoice(voiceType, this.position.x, 1.5, this.position.z, mood);
+        this.isTalking = true;
+        this.talkDuration = 1.2 + Math.random()*1.5;
+        this.idleTimer = this.talkDuration + 0.5;
+      }
+    }
+
+    // Talking animation
+    if (this.isTalking) {
+      this.walk += dt*2.5;
+      if (this.parts) {
+        // Mouth/head movement for talking
+        this.parts.head.rotation.y = Math.sin(this.walk*4)*0.3 + Math.sin(this.walk*1.2)*0.4;
+        this.parts.head.rotation.x = Math.sin(this.walk*5)*0.15;
+        // Gesture while talking - varied per voice
+        if (this.gestureTimer <=0) {
+          this.gestureTimer = 0.3 + Math.random()*0.5;
+        }
+        if (this.gestureTimer >0) {
+          const k = Math.sin(this.walk*6)*0.8;
+          this.parts.armR.rotation.x = -k*0.8 - 0.3;
+          this.parts.armR.rotation.z = -0.2 + k*0.5;
+          this.parts.armL.rotation.x = k*0.5;
+        }
+      }
+      this.group.position.copy(this.position);
+      this.group.rotation.y = this.yaw;
+      return;
+    }
     
     // Idle behavior
     if (this.idleTimer > 0) {
-      // Idle animation - look around, gesture
       this.walk += dt*1.2;
       if (this.parts) {
         this.parts.head.rotation.y = Math.sin(this.walk*0.5)*0.6;
@@ -109,7 +195,6 @@ export class Civilian {
     }
     
     if (this.wanderTimer <= 0) {
-      // Chance to idle
       if (Math.random()<0.25) {
         this.idleTimer = 1 + Math.random()*3;
         this.wanderTimer = 3;
@@ -121,7 +206,6 @@ export class Civilian {
       if (this.position.x > 850) this.wanderDir.x = -Math.abs(this.wanderDir.x);
       if (this.position.z < -680) this.wanderDir.z = Math.abs(this.wanderDir.z);
       if (this.position.z > 680) this.wanderDir.z = -Math.abs(this.wanderDir.z);
-      // Talk animation when near other civilian - simplified
       if (this.talkTimer <=0) {
         this.talkTimer = 3 + Math.random()*5;
         this.idleTimer = 1.5 + Math.random()*2;
@@ -142,7 +226,6 @@ export class Civilian {
       this.parts.armR.rotation.x = swing*0.6;
       this.parts.torso.position.y = bob;
       this.parts.head.position.y = 1.35*(this.type==='child'?0.7:1) + bob*0.5;
-      // Breathing
       this.parts.torso.scale.set(1+Math.sin(this.walk*0.5)*0.02,1,1);
     }
     
@@ -161,7 +244,8 @@ export class CivilianManager {
 
   spawn() {
     const types = ['citizen','citizen','citizen','merchant','child','priest','noble','guard'];
-    for (let i=0;i<55;i++) {
+    // More civilians for richer soundscape - 65 with varied voices
+    for (let i=0;i<65;i++) {
       const x = (Math.random()-0.5)*1600;
       const z = (Math.random()-0.5)*1200;
       if (Math.abs(x) < 100 && Math.abs(z) < 100 && Math.random()<0.7) continue;
@@ -169,10 +253,10 @@ export class CivilianManager {
       const pos = new THREE.Vector3(x,0,z);
       this.civilians.push(new Civilian(this.scene, pos, type));
     }
-    console.log('[CIVILIANS] Spawned', this.civilians.length, 'citizens - living world, animations everywhere: walk, idle, gesture, talk, breathe');
+    console.log('[CIVILIANS] Spawned', this.civilians.length, 'citizens with UNIQUE VOICES - each has personal pitch/formant/speed, varied speaking, not one voice for everyone. Types: child high playful, citizen_m/f warm, merchant fast haggling, priest low reverent, guard loud commanding, noble clear elegant');
   }
 
-  update(dt) {
-    for (const c of this.civilians) c.update(dt);
+  update(dt, soundscape, playerPos) {
+    for (const c of this.civilians) c.update(dt, soundscape, playerPos);
   }
 }

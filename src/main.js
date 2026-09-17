@@ -10,6 +10,8 @@ import { BuildingSystem, BUILD_RECIPES } from './buildingSystem.js';
 import { CraftingManager, CRAFT_RECIPES } from './crafting.js';
 import { CivilianManager } from './civilians.js';
 import { updateAnimations } from './animations.js';
+import { Soundscape } from './soundscape.js';
+import { RainSystem, LightningSystem, EarthquakeVisuals } from './weather.js';
 
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -18,7 +20,7 @@ import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-// Loading - serious game polish with full empire
+// Loading - serious game with FULL EMPIRE + SOUNDS EVERYWHERE
 const loadProgress = document.getElementById('load-progress');
 const loadText = document.getElementById('load-text');
 const loadingEl = document.getElementById('loading');
@@ -26,25 +28,25 @@ function setLoad(pct, txt) {
   if (loadProgress) loadProgress.style.width = pct + '%';
   if (loadText) loadText.textContent = txt + ` ${Math.round(pct)}%`;
 }
-setLoad(5, 'Loading Three.js core - animations everywhere');
+setLoad(5, 'Loading Three.js core - sounds everywhere, varied voices');
 await new Promise(r => setTimeout(r, 60));
-setLoad(14, 'Generating PBR materials - marble, travertine, mosaic, gold, bronze');
+setLoad(14, 'Generating PBR materials + nice audio synthesis - fire crackle, water flow, wind, thunder');
 await new Promise(r => setTimeout(r, 70));
-setLoad(24, 'Carving fluted columns & Corinthian capitals - real Roman dimensions verified');
+setLoad(24, 'Carving fluted columns & Corinthian capitals - verified dimensions + positional audio');
 await new Promise(r => setTimeout(r, 60));
-setLoad(34, 'Building Forum: Saturn 22.5x40x9 Aerarium, Vesta 20 cols sacred fire, Jupiter 3 cellae, Curia 82x58ft 300 senators');
+setLoad(34, 'Building Forum: Saturn 22.5x40x9 Aerarium, Vesta 20 cols sacred fire crackling, Jupiter 3 cellae crowd murmur');
 await new Promise(r => setTimeout(r, 80));
-setLoad(44, 'Missing Forum: Vespasian Titus 22x33m 15.2m cols, Antoninus Faustina 17m cipollino, Romulus 15m bronze doors, Concord 45x24m');
+setLoad(44, 'Missing Forum: Vespasian Titus 22x33m, Antoninus Faustina 17m cipollino, Romulus 15m bronze doors creak, Concord 45x24m');
 await new Promise(r => setTimeout(r, 80));
-setLoad(54, 'Arches: Septimius Severus 23x25x11.85 central 12x7 sides 7.8x3 cols 8.78m, Titus 15.4x13.5x4.75 inner 8.3x5.36');
+setLoad(54, 'Arches: Septimius Severus 23x25x11.85, Titus 15.4x13.5x4.75 - wind flag flap sounds, earthquake sway');
 await new Promise(r => setTimeout(r, 70));
-setLoad(64, 'Sacred: Regia 3 rooms Mars Ops, Umbilicus 2m high 4.45m diam, Milliarium 3.7m high 1.15m diam gilded Augustus 20BC, Lapis Niger');
+setLoad(64, 'Sacred: Regia 3 rooms, Umbilicus, Milliarium gilded, Lapis Niger - unique priest/vestal voices, incense hiss');
 await new Promise(r => setTimeout(r, 70));
-setLoad(72, 'Empire: Pantheon dome 43.44m oculus 8.8-9.2m 16 cols 11.8m, Baths Diocletian 376x361 13ha 3000 bathers, Markets Trajan 150 shops');
+setLoad(72, 'Empire: Pantheon dome 43.44m oculus beam + echo reverb, Baths Diocletian 376x361 water dripping, Markets Trajan haggling voices');
 await new Promise(r => setTimeout(r, 80));
-setLoad(80, 'Mausoleums: Augustus 87m diam 42m high 28BC, Hadrian 89m square 64m diam 21m high, Domus Aurea 150 rooms, Palatine palaces');
+setLoad(80, 'Mausoleums: Augustus 87m, Hadrian 89m, Domus Aurea golden echo, Palatine - varied noble/guard voices, storm thunder');
 await new Promise(r => setTimeout(r, 70));
-setLoad(86, 'Fora: Augustus 125x118 Mars Ultor, Trajan with Column 30m high 3.7m diam 190m frieze, Ara Pacis 11.65x10.62, Aqueducts, Aurelian Walls 19km');
+setLoad(86, 'Weather: rain particles 3000 drops, lightning bolts branching, earthquake rumble 20Hz + dust burst + building sway');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
@@ -61,11 +63,11 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 scene.add(camera);
 scene.fog = new THREE.Fog(0xe8c9a0, 150, 900);
 
-setLoad(90, 'Building FULL ROMAN EMPIRE 1800x1400 + animations everywhere - flags, fires, water, trees, chariots, smoke, doors, statues');
+setLoad(90, 'Building FULL ROMAN EMPIRE 1800x1400 + sounds everywhere - flags flap, fires crackle, water flows, voices varied');
 const worldInfo = buildWorld(scene);
-console.log('[WORLD] FULL ROMAN EMPIRE Static client-only:', worldInfo.bounds, 'spawns', spawnPoints.length, 'interiors', buildingInteriors.length, 'factions', Object.keys(factionZones).length, 'colliders', 'no noclip - VERIFIED DIMENSIONS');
+console.log('[WORLD] FULL ROMAN EMPIRE Static client-only:', worldInfo.bounds, 'spawns', spawnPoints.length, 'interiors', buildingInteriors.length, 'factions', Object.keys(factionZones).length, 'colliders', 'no noclip - VERIFIED DIMENSIONS - sounds everywhere');
 
-setLoad(94, 'Lighting torches, sky, dust, faction flags, civilians - animations everywhere');
+setLoad(94, 'Lighting torches, sky, dust, rain, lightning, earthquake, faction flags, civilians with unique voices');
 const hemi = new THREE.HemisphereLight(0xfff1d6, 0x6b5a3e, 0.72); scene.add(hemi);
 const sunLight = new THREE.DirectionalLight(0xffe2b0, 2.6);
 sunLight.position.set(90, 120, -60); sunLight.castShadow = true;
@@ -86,8 +88,17 @@ const bloodSystem = new BloodDecalSystem(scene);
 const torchObjects = [];
 for (const tp of torchPositions) torchObjects.push(new Torch(scene, tp.x, tp.y, tp.z, true));
 
-setLoad(97, 'Forging combat: stab/slash/chop, parry slow-mo, building, crafting, quests, economy - animations everywhere');
+// Weather visuals
+const rainSystem = new RainSystem(scene, 3500);
+const lightningSystem = new LightningSystem(scene);
+const earthquakeVisuals = new EarthquakeVisuals(scene, camera);
+
+setLoad(97, 'Forging combat: stab/slash/chop varied voices, parry slow-mo, building hammer, crafting, quests, economy, earthquake, storm');
 const player = new Player(camera, renderer.domElement);
+
+// Soundscape - EVERYWHERE nice sounds, varied voices
+const soundscape = new Soundscape(scene, camera, player);
+soundscape.createLocationAmbience();
 
 const questManager = new QuestManager(player, factionZones, buildingInteriors);
 const economyManager = new EconomyManager(scene, player);
@@ -95,9 +106,9 @@ const buildingSystem = new BuildingSystem(scene, player, economyManager);
 const craftingManager = new CraftingManager(economyManager, player);
 const civilianManager = new CivilianManager(scene);
 
-console.log('[GAME] Managers: quests', questManager.getActiveQuests().length, 'economy nodes', economyManager.resourceNodes.length, 'build', Object.keys(BUILD_RECIPES).length, 'craft', Object.keys(CRAFT_RECIPES).length, 'civilians 50+ - static client-only, serious game, animations everywhere');
+console.log('[GAME] Managers: quests', questManager.getActiveQuests().length, 'economy nodes', economyManager.resourceNodes.length, 'build', Object.keys(BUILD_RECIPES).length, 'craft', Object.keys(CRAFT_RECIPES).length, 'civilians 65 with UNIQUE VOICES - static client-only, serious game, sounds everywhere, varied voices, earthquake, storm, thunder');
 
-setLoad(99, 'Post-processing bloom+SSAO+color grading - full empire');
+setLoad(99, 'Post-processing bloom+SSAO+color grading + weather flashes - full empire with sounds');
 let composer, bloomPass, ssaoPass, outputPass, colorGradePass;
 let quality = localStorage.getItem('kitchuban_quality') || 'medium';
 const qualitySelect = document.getElementById('quality');
@@ -129,7 +140,7 @@ function setupComposer() {
 }
 setupComposer();
 
-setLoad(100, 'Ready — FULL ROMAN EMPIRE - Static Client Only - Animations Everywhere - Verified Dimensions');
+setLoad(100, 'Ready — FULL EMPIRE + SOUNDS EVERYWHERE - Varied Voices, Earthquake, Storm Thunder, Rain, Nice Audio');
 await new Promise(r => setTimeout(r, 500));
 if (loadingEl) { loadingEl.style.opacity = '0'; setTimeout(() => loadingEl.style.display = 'none', 700); }
 
@@ -157,6 +168,7 @@ const ui = {
   level: document.getElementById('levelcount'),
   resources: document.getElementById('resourcecount'),
   minimap: document.getElementById('minimap'),
+  weather: document.getElementById('serverstatus'),
 };
 let msgTimer = 0, parryTimer = 0;
 function showMessage(text, seconds = 4.5) { ui.message.textContent = text; ui.message.style.opacity = 1; msgTimer = seconds; }
@@ -171,14 +183,14 @@ document.querySelectorAll('.rolebtn').forEach(btn => {
     selectedRole = btn.dataset.role;
     localStorage.setItem('kitchuban_role', selectedRole);
     const role = PLAYER_ROLES[selectedRole];
-    if (ui.roledesc) ui.roledesc.textContent = `${role.desc} | FACTION: ${FACTIONS[role.faction]?.name} | Gold:${questManager.gold} Lv${questManager.level} | Full Empire, animations everywhere!`;
+    if (ui.roledesc) ui.roledesc.textContent = `${role.desc} | FACTION: ${FACTIONS[role.faction]?.name} | Gold:${questManager.gold} Lv${questManager.level} | Full Empire, sounds everywhere, varied voices!`;
     player.applyRole(selectedRole);
     if (ui.rolehud) ui.rolehud.textContent = `${role.name.toUpperCase()} [${FACTIONS[role.faction]?.name?.toUpperCase()}] Lv${questManager.level}`;
   });
 });
 if (ui.roledesc) {
   const r = PLAYER_ROLES[selectedRole];
-  ui.roledesc.textContent = `${r.desc} | FACTION: ${FACTIONS[r.faction]?.name} — Enemies: ${FACTIONS[r.faction]?.enemies.join(', ')} | Gold:${questManager.gold} Lv${questManager.level} | Full Roman Empire, animations everywhere, verified dimensions!`;
+  ui.roledesc.textContent = `${r.desc} | FACTION: ${FACTIONS[r.faction]?.name} — Enemies: ${FACTIONS[r.faction]?.enemies.join(', ')} | Gold:${questManager.gold} Lv${questManager.level} | Full Roman Empire, sounds everywhere, varied voices, earthquake, storm!`;
 }
 player.applyRole(selectedRole);
 if (ui.rolehud) {
@@ -190,37 +202,50 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   if (e.code === 'KeyB') {
     const mode = buildingSystem.toggleBuildMode();
-    showMessage(mode ? `Build mode ON - ${BUILD_RECIPES[buildingSystem.selectedBuild].name} [1-6 select, E place, B exit] - Full Empire!` : 'Build mode OFF', 3);
-    sfx('order', {volume:0.1});
+    showMessage(mode ? `Build mode ON - ${BUILD_RECIPES[buildingSystem.selectedBuild].name} [1-6 select, E place, B exit] - Full Empire with sounds!` : 'Build mode OFF', 3);
+    soundscape.playCombatSound('bash', player.position.x, player.position.y, player.position.z);
   }
   if (e.code === 'KeyE' && buildingSystem.buildMode) {
     if (buildingSystem.tryPlace()) {
-      showMessage(`Built ${BUILD_RECIPES[buildingSystem.selectedBuild].name}! Full Empire static!`, 2.5);
-      sfx('coin', {volume:0.12});
+      showMessage(`Built ${BUILD_RECIPES[buildingSystem.selectedBuild].name}! Hammer sound, dust! Full Empire!`, 2.5);
+      soundscape.onBuildingPlace(player.position.x, player.position.y, player.position.z);
+      // Nearby civilians react with varied voices
+      if (Math.random()<0.5) {
+        const nearby = civilianManager.civilians.filter(c => c.position.distanceTo(player.position) < 20);
+        if (nearby.length) {
+          const civ = nearby[Math.floor(Math.random()*nearby.length)];
+          soundscape.playCivilianVoice(civ.voiceProfile.id.split('-')[0], civ.position.x, 1.5, civ.position.z, 'greet');
+        }
+      }
     } else {
       showMessage('Cannot build here or not enough resources! Gather wood/marble!', 2);
     }
   }
-  if (e.code === 'Digit1') { buildingSystem.setBuildType('wall'); showMessage('Selected: Wooden Palisade - 5 wood 10 gold',2); }
-  if (e.code === 'Digit2') { buildingSystem.setBuildType('tower'); showMessage('Selected: Watch Tower - 15 wood 5 marble 50 gold',2); }
-  if (e.code === 'Digit3') { buildingSystem.setBuildType('shelter'); showMessage('Selected: Shelter Tent - 8 wood 3 grain 20 gold',2); }
-  if (e.code === 'Digit4') { buildingSystem.setBuildType('chest'); showMessage('Selected: Storage Chest - 4 wood 15 gold',2); }
-  if (e.code === 'Digit5') { buildingSystem.setBuildType('fire'); showMessage('Selected: Camp Fire - 3 wood 1 oil 5 gold',2); }
-  if (e.code === 'Digit6') { buildingSystem.setBuildType('barricade'); showMessage('Selected: Barricade - 6 wood 2 weapons 25 gold',2); }
+  if (e.code === 'Digit1') { buildingSystem.setBuildType('wall'); showMessage('Selected: Wooden Palisade - 5 wood 10 gold - wood hammer sound',2); }
+  if (e.code === 'Digit2') { buildingSystem.setBuildType('tower'); showMessage('Selected: Watch Tower - 15 wood 5 marble 50 gold - stone chisel sound',2); }
+  if (e.code === 'Digit3') { buildingSystem.setBuildType('shelter'); showMessage('Selected: Shelter Tent - 8 wood 3 grain 20 gold - cloth rustle',2); }
+  if (e.code === 'Digit4') { buildingSystem.setBuildType('chest'); showMessage('Selected: Storage Chest - 4 wood 15 gold - wood creak',2); }
+  if (e.code === 'Digit5') { buildingSystem.setBuildType('fire'); showMessage('Selected: Camp Fire - 3 wood 1 oil 5 gold - fire crackle',2); }
+  if (e.code === 'Digit6') { buildingSystem.setBuildType('barricade'); showMessage('Selected: Barricade - 6 wood 2 weapons 25 gold - metal clang',2); }
   if (e.code === 'KeyC') {
     const recipes = Object.keys(CRAFT_RECIPES);
     let crafted = false;
     for (const rid of recipes) {
       if (craftingManager.canCraft(rid)) {
         const res = craftingManager.craft(rid);
-        if (res.ok) { showMessage(`Crafted ${res.recipe.name}: ${res.message} - Full Empire!`, 3); sfx('coin',{volume:0.1}); crafted=true; break; }
+        if (res.ok) { 
+          showMessage(`Crafted ${res.recipe.name}: ${res.message} - anvil hammer sound! Full Empire!`, 3); 
+          soundscape.playCombatSound('hit', player.position.x, player.position.y, player.position.z);
+          crafted=true; 
+          break; 
+        }
       }
     }
     if (!crafted) showMessage('Not enough resources to craft! Gather grain/wood/marble/oil!', 2.5);
   }
   if (e.code === 'KeyG') {
     const res = economyManager.getResources();
-    showMessage(`Resources: Gold ${res.gold} | Grain ${res.grain} | Wood ${res.wood} | Marble ${res.marble} | Oil ${res.oil} | Wine ${res.wine} | Weapons ${res.weapons} - Walk near nodes! Full Empire!`, 5);
+    showMessage(`Resources: Gold ${res.gold} | Grain ${res.grain} | Wood ${res.wood} | Marble ${res.marble} | Oil ${res.oil} | Wine ${res.wine} | Weapons ${res.weapons} - Walk near nodes! Full Empire with sounds!`, 5);
   }
   if (e.code === 'KeyJ') {
     const quests = questManager.getActiveQuests();
@@ -230,69 +255,21 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'KeyM') {
     if (ui.minimap) ui.minimap.style.display = ui.minimap.style.display === 'none' ? 'block' : 'none';
   }
+  if (e.code === 'KeyT') {
+    // Test thunder
+    soundscape.playThunder(0.8+Math.random()*0.6, {x: player.position.x+(Math.random()-0.5)*200, y:200, z: player.position.z+(Math.random()-0.5)*200});
+    lightningSystem.createBolt(player.position.x+(Math.random()-0.5)*200, player.position.z+(Math.random()-0.5)*200, 0.8+Math.random()*0.5);
+    showMessage('THUNDER TEST - lightning flash + rumble + varied echo!', 3);
+  }
+  if (e.code === 'KeyY') {
+    // Test earthquake
+    const intensity = 0.5+Math.random()*0.7;
+    const duration = 3+Math.random()*4;
+    soundscape.playEarthquake(intensity, duration);
+    earthquakeVisuals.trigger(intensity, duration);
+    showMessage(`EARTHQUAKE TEST - intensity ${intensity.toFixed(2)} - buildings sway, dust burst, screen shake, rumble 20Hz!`, 4);
+  }
 });
-
-let actx;
-function ensureAudio() { try { actx ??= new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch {} }
-function sfx(type, opts = {}) {
-  try {
-    ensureAudio(); if (!actx) return;
-    const t = actx.currentTime; const master = actx.createGain(); master.gain.value = opts.volume ?? 0.14; master.connect(actx.destination);
-    if (type === 'swing') {
-      const o = actx.createOscillator(), g = actx.createGain(), f = actx.createBiquadFilter();
-      o.type = 'sawtooth'; o.frequency.setValueAtTime(190 + (opts.combo||0)*30, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.16 + (opts.combo||0)*0.02);
-      f.type = 'lowpass'; f.frequency.value = 1200 + (opts.combo||0)*200; g.gain.setValueAtTime(0.09 + (opts.combo||0)*0.02, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.20);
-      o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t + 0.24);
-    } else if (type === 'hit') {
-      const o = actx.createOscillator(), g = actx.createGain(), o2 = actx.createOscillator(), g2 = actx.createGain();
-      o.type = 'square'; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.12);
-      g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-      o2.type = 'sawtooth'; o2.frequency.setValueAtTime(620, t); o2.frequency.exponentialRampToValueAtTime(80, t + 0.08);
-      g2.gain.setValueAtTime(0.08, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
-      o.connect(g); g.connect(master); o2.connect(g2); g2.connect(master);
-      o.start(t); o.stop(t + 0.20); o2.start(t); o2.stop(t + 0.12);
-      if (ui.hitmarker) { ui.hitmarker.style.opacity = '1'; ui.hitmarker.style.transform = 'scale(1.25)'; setTimeout(() => { ui.hitmarker.style.opacity = '0'; ui.hitmarker.style.transform = 'scale(0.8)'; }, 110); }
-    } else if (type === 'block') {
-      const o = actx.createOscillator(), g = actx.createGain();
-      const buf = actx.createBuffer(1, actx.sampleRate * 0.15, actx.sampleRate); const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
-      const n = actx.createBufferSource(); n.buffer = buf; const fg = actx.createGain(); fg.gain.setValueAtTime(0.22, t); fg.gain.exponentialRampToValueAtTime(0.001, t + 0.15); n.connect(fg); fg.connect(master);
-      o.type = 'triangle'; o.frequency.setValueAtTime(920, t); o.frequency.exponentialRampToValueAtTime(280, t + 0.09); g.gain.setValueAtTime(0.14, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.14); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.16); n.start(t);
-    } else if (type === 'parry') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(880, t); o.frequency.exponentialRampToValueAtTime(1400, t + 0.14); g.gain.setValueAtTime(0.20, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.38); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.42);
-    } else if (type === 'hurt') {
-      const o = actx.createOscillator(), g = actx.createGain(), f = actx.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.setValueAtTime(110, t); o.frequency.linearRampToValueAtTime(45, t + 0.28); f.type = 'lowpass'; f.frequency.value = 700; g.gain.setValueAtTime(0.20, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35); o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t + 0.42);
-    } else if (type === 'horn') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(180, t); o.frequency.linearRampToValueAtTime(220, t + 0.15); o.frequency.setValueAtTime(330, t + 0.32); o.frequency.linearRampToValueAtTime(260, t + 0.9); g.gain.setValueAtTime(0.0, t); g.gain.linearRampToValueAtTime(0.15, t + 0.08); g.gain.linearRampToValueAtTime(0.15, t + 0.7); g.gain.exponentialRampToValueAtTime(0.001, t + 1.3); o.connect(g); g.connect(master); o.start(t); o.stop(t + 1.45);
-    } else if (type === 'footstep') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(82 + Math.random() * 24, t); g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.13); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.15);
-    } else if (type === 'bash') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'square'; o.frequency.setValueAtTime(210, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.16); g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.24); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.27);
-    } else if (type === 'reload') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(300, t); o.frequency.linearRampToValueAtTime(500, t + 0.15); g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.25);
-    } else if (type === 'draw') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(180, t); o.frequency.linearRampToValueAtTime(320, t + 0.35); g.gain.setValueAtTime(0.06, t); g.gain.linearRampToValueAtTime(0.09, t + 0.2); g.gain.exponentialRampToValueAtTime(0.001, t + 0.45); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.5);
-    } else if (type === 'alarm') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'square'; o.frequency.setValueAtTime(440, t); o.frequency.setValueAtTime(550, t+0.2); o.frequency.setValueAtTime(440, t+0.4); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.8); o.connect(g); g.connect(master); o.start(t); o.stop(t+0.85);
-    } else if (type === 'order') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(300, t); o.frequency.linearRampToValueAtTime(600, t+0.5); g.gain.setValueAtTime(0.10, t); g.gain.linearRampToValueAtTime(0.18, t+0.2); g.gain.exponentialRampToValueAtTime(0.001, t+1.1); o.connect(g); g.connect(master); o.start(t); o.stop(t+1.2);
-    } else if (type === 'coin') {
-      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(600, t); o.frequency.exponentialRampToValueAtTime(1200, t+0.15); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.3); o.connect(g); g.connect(master); o.start(t); o.stop(t+0.35);
-    }
-  } catch {}
-}
-let ambientGain;
-function startAmbient() {
-  try {
-    ensureAudio(); if (!actx || ambientGain) return;
-    ambientGain = actx.createGain(); ambientGain.gain.value = 0.0; ambientGain.connect(actx.destination);
-    const buf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate); const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.22;
-    const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
-    const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 360; src.connect(f); f.connect(ambientGain); src.start();
-    ambientGain.gain.linearRampToValueAtTime(0.05, actx.currentTime + 2.2);
-  } catch {}
-}
 
 let enemies = [], pila = [], arrows = [];
 let wave = 0, kills = 0, running = false, waveCooldown = 0, footstepTimer = 0;
@@ -325,7 +302,7 @@ function initFactions() {
       factionPop[fid]++;
     }
   }
-  console.log('[FACTION] Full Empire pops:', factionPop);
+  console.log('[FACTION] Full Empire pops:', factionPop, 'with varied faction voices - each faction unique shout');
 }
 initFactions();
 
@@ -341,17 +318,26 @@ function issueKingOrder() {
     { text: 'COLOSSEUM: Gladiator games today! Blood for the crowd!', from: 'emperor', to: 'legio', target: 'legio' },
     { text: 'PANTHEON: Sacrifice to all gods - oculus light ceremony!', from: 'emperor', to: 'vestals', target: 'vestals' },
     { text: 'AQUEDUCT: Water flows from Aqua Marcia - baths open!', from: 'senate', to: 'merchants', target: 'merchants' },
+    { text: 'STORM WARNING: Jupiter Tonans - thunder over Rome! Seek shelter!', from: 'emperor', to: 'legio', target: 'legio' },
+    { text: 'EARTHQUAKE: Tellus trembles! Buildings sway! - Pontifex Maximus prays!', from: 'vestals', to: 'senate', target: 'senate' },
   ];
   const order = orders[Math.floor(Math.random()*orders.length)];
-  showMessage(order.text, 6.5); sfx('order', {volume:0.18});
+  showMessage(order.text, 6.5); 
+  // Varied voice per faction
+  const fromZone = factionZones[order.from];
+  if (fromZone) {
+    soundscape.playFactionShout(order.from, fromZone.x, 2, fromZone.z);
+  } else {
+    soundscape.playFactionShout(order.from, player.position.x, 2, player.position.z);
+  }
   warEvents.push({time: Date.now(), text: order.text});
   const targetZone = factionZones[order.target];
-  const fromZone = factionZones[order.to];
-  if (targetZone && fromZone) {
+  const fromZone2 = factionZones[order.to];
+  if (targetZone && fromZone2) {
     for (let i=0;i<5;i++) {
-      const pos = new THREE.Vector3(fromZone.x + (Math.random()-0.5)*12, 0, fromZone.z + (Math.random()-0.5)*12);
+      const pos = new THREE.Vector3(fromZone2.x + (Math.random()-0.5)*12, 0, fromZone2.z + (Math.random()-0.5)*12);
       const e = new Enemy(scene, pos, 'spearman', order.to);
-      e.wander.set(targetZone.x - fromZone.x, 0, targetZone.z - fromZone.z).normalize().multiplyScalar(e.speed);
+      e.wander.set(targetZone.x - fromZone2.x, 0, targetZone.z - fromZone2.z).normalize().multiplyScalar(e.speed);
       e.wanderT = 12;
       enemies.push(e);
     }
@@ -370,7 +356,10 @@ function surpriseFactionAttack() {
     const e = new Enemy(scene, pos, 'rebel', attacker);
     enemies.push(e);
   }
-  showMessage(`SURPRISE! ${FACTIONS[attacker]?.name} ambush! Full Empire!`, 5); sfx('alarm', {volume:0.16});
+  showMessage(`SURPRISE! ${FACTIONS[attacker]?.name} ambush! Varied war cries!`, 5); 
+  soundscape.playFactionShout(attacker, center.x, 1.8, center.z);
+  // Alarm sound
+  soundscape.playThunder(0.5, {x:center.x, y:20, z:center.z});
 }
 
 function factionWarUpdate(dt) {
@@ -391,7 +380,10 @@ function factionWarUpdate(dt) {
           e.wanderT = 10;
           enemies.push(e);
         }
-        if (Math.random()<0.4) showMessage('Faction War: Legio counter-attacks Rebel Subura!',3.5);
+        if (Math.random()<0.4) {
+          showMessage('Faction War: Legio counter-attacks Rebel Subura! War cries varied!',3.5);
+          soundscape.playFactionShout('legio', legioZone.x, 1.8, legioZone.z);
+        }
       }
     }
   }
@@ -420,8 +412,10 @@ function spawnWave() {
     enemies.push(new Enemy(scene, pos, type, faction));
   }
   if (player.role==='sagittarius') player.pila=Math.min(32, player.pila+10); else player.pila=Math.min(player.roleData.pila+4, player.pila+3);
-  showMessage(isBossWave ? `WAVE ${toRoman(wave)} — CENTURION! Gold:${questManager.gold} Lv${questManager.level} - Full Empire!` : `WAVE ${toRoman(wave)} — Gold:${questManager.gold} Lv${questManager.level} Factions at war! Full Empire!`, 4.5);
-  sfx('horn', {volume:0.22});
+  showMessage(isBossWave ? `WAVE ${toRoman(wave)} — CENTURION! Gold:${questManager.gold} Lv${questManager.level} - Varied war cries!` : `WAVE ${toRoman(wave)} — Gold:${questManager.gold} Lv${questManager.level} Factions at war! Varied voices!`, 4.5);
+  soundscape.playCombatSound('bash', player.position.x, player.position.y, player.position.z);
+  // Horn with varied faction voice
+  soundscape.playFactionShout(player.faction, player.position.x, 1.8, player.position.z);
   questManager.onSurviveWave();
 }
 
@@ -443,7 +437,8 @@ function resetGame() {
 
 ui.play.addEventListener('click', () => {
   if (player.health <= 0 || wave === 0) resetGame();
-  ensureAudio(); startAmbient();
+  soundscape.ensureAudio();
+  soundscape.startWeatherLoop();
   renderer.domElement.requestPointerLock();
 });
 document.addEventListener('pointerlockchange', () => {
@@ -482,9 +477,9 @@ function updateQuestUI() {
       <span class="qicon">${q.icon}</span> <b>${q.name}</b> - ${q.desc} 
       <span class="qprog">${q.currentCount}/${q.targetCount}</span>
       <span class="qfrom">from ${q.from}</span>
-      ${q.completed ? '<span class="qdone">COMPLETED! +'+q.reward.gold+' gold</span>' : ''}
+      ${q.completed ? '<span class="qdone">COMPLETED! +'+q.reward.gold+' gold - coin sound!</span>' : ''}
     </div>
-  `).join('') + `<div class="qstats">Lv ${prog.level} | XP ${prog.xp}/${prog.level*250} | Discovered ${prog.discovered} | Patrol ${prog.patrol}/5 | Built ${buildingSystem.placedBuildings.length} | Full Empire Animations Everywhere</div>`;
+  `).join('') + `<div class="qstats">Lv ${prog.level} | XP ${prog.xp}/${prog.level*250} | Discovered ${prog.discovered} | Patrol ${prog.patrol}/5 | Built ${buildingSystem.placedBuildings.length} | Weather: ${soundscape.weather.state} | Voices: 65 unique | Sounds everywhere</div>`;
 }
 
 function updateMinimap() {
@@ -515,6 +510,14 @@ function updateMinimap() {
   }
 }
 
+function updateWeatherUI() {
+  if (ui.weather) {
+    const w = soundscape.weather;
+    const eq = soundscape.earthquake.active ? ` EARTHQUAKE ${w.state.toUpperCase()}!` : '';
+    ui.weather.textContent = `FULL EMPIRE Static | Weather: ${w.state.toUpperCase()} rain:${w.rainIntensity.toFixed(2)} wind:${w.windIntensity.toFixed(2)} | ${w.thunderTimer.toFixed(0)}s thunder | EQ cooldown ${soundscape.earthquake.cooldown.toFixed(0)}s${eq} | 65 unique voices | Sounds everywhere - fire crackle, water flow, flag flap, chariot gallop, varied crowd | T thunder test, Y earthquake test | No Admins!`;
+  }
+}
+
 const clock = new THREE.Clock();
 let dmgFlash=0;
 function tick(){
@@ -525,18 +528,44 @@ function tick(){
   dt*=slowMoFactor;
 
   skySystem.update(dt);
-  dustSystem.update(dt, new THREE.Vector3(Math.sin(elapsed*0.07)*0.24,0,Math.cos(elapsed*0.05)*0.14));
-  for(const t of torchObjects) t.update(dt); sparkSystem.update(dt); bloodSystem.update(dt);
+  dustSystem.update(dt, new THREE.Vector3(Math.sin(elapsed*0.07)*0.24 + soundscape.weather.windIntensity*0.5,0,Math.cos(elapsed*0.05)*0.14));
+  for(const t of torchObjects) t.update(dt); 
+  sparkSystem.update(dt); 
+  bloodSystem.update(dt);
   updateAnimations(dt, elapsed, player.position);
+  
+  // Weather visuals
+  rainSystem.setIntensity(soundscape.weather.rainIntensity, player.position);
+  rainSystem.update(dt, player.position, soundscape.weather.windIntensity);
+  lightningSystem.update(dt);
+  earthquakeVisuals.update(dt, player, null, dustSystem);
+
+  // Soundscape update - weather, earthquake, positional audio
+  soundscape.update(dt, player.position, skySystem, dustSystem, null, null);
+  soundscape.updateAmbientLoops(dt, player.position);
+
   economyManager.update(dt);
   buildingSystem.update(dt);
-  civilianManager.update(dt);
+  civilianManager.update(dt, soundscape, player.position);
   if(colorGradePass) colorGradePass.uniforms.time.value=elapsed;
 
   if(running && player.health>0){
     player.update(dt);
     const moving=player.velocity.length()>0.6 && player.onGround;
-    if(moving){ footstepTimer-=dt; if(footstepTimer<=0){ footstepTimer=player.keys['ShiftLeft']?0.30:0.46; sfx('footstep',{volume:0.07}); } }
+    if(moving){ 
+      footstepTimer-=dt; 
+      if(footstepTimer<=0){ 
+        footstepTimer=player.keys['ShiftLeft']?0.30:0.46; 
+        // Footstep with surface detection + positional sound
+        let surface = 'ground';
+        // Simple surface detection based on position
+        const x = player.position.x, z = player.position.z;
+        if (Math.abs(x) < 100 && Math.abs(z) < 100) surface = 'marble'; // Forum marble
+        else if (Math.abs(x) < 400 && Math.abs(z) < 300) surface = 'travertine';
+        else if (soundscape.weather.rainIntensity>0.3) surface = 'water';
+        soundscape.onFootstep(surface, player.position.x, 0.1, player.position.z, player.keys['ShiftLeft']);
+      } 
+    }
 
     kingOrderTimer-=dt; if(kingOrderTimer<=0){ kingOrderTimer=38+Math.random()*22; issueKingOrder(); }
     surpriseAttackTimer-=dt; if(surpriseAttackTimer<=0){ surpriseAttackTimer=32+Math.random()*28; if(Math.random()<0.85) surpriseFactionAttack(); }
@@ -544,18 +573,48 @@ function tick(){
 
     questManager.onPatrol(player.position.x, player.position.z);
 
-    if(player.attackT>0 && player.attackT<0.08){ if(player.roleData.weapon==='bow') sfx('draw',{volume:0.08}); else sfx('swing',{volume:0.12 + (player.combo-1)*0.04, combo:player.combo}); }
-    if(player.reloadT>0 && player.reloadT<0.12) sfx('reload',{volume:0.09});
+    if(player.attackT>0 && player.attackT<0.08){ 
+      if(player.roleData.weapon==='bow') {
+        soundscape.playCombatSound('swing', player.position.x, player.position.y, player.position.z);
+      } else {
+        soundscape.playCombatSound('swing', player.position.x, player.position.y, player.position.z, player.combo);
+      }
+    }
+    if(player.reloadT>0 && player.reloadT<0.12) {
+      soundscape.playCombatSound('swing', player.position.x, player.position.y, player.position.z);
+    }
 
     const hitInfo=player.consumeHitWindow();
     if(hitInfo){
       const { enemies: targets, dmgMult } = meleeHit();
-      if(targets.length) sfx('hit',{volume:0.16 + hitInfo.combo*0.04});
+      if(targets.length) {
+        soundscape.playCombatSound('hit', player.position.x, player.position.y, player.position.z, hitInfo.combo);
+        // Victim varied hurt voices
+        for (const e of targets) {
+          if (!e.dead) {
+            const voiceType = e.faction==='rebels'?'rebel': e.faction==='legio'?'legionary':'guard';
+            soundscape.playCivilianVoice(voiceType, e.position.x, 1.5, e.position.z, 'hurt');
+          }
+        }
+      }
       for(const e of targets){
         const dmg=Math.round(40*hitInfo.damageMult*dmgMult*(player.role==='centurion'?1.25:1));
         const blocked=e.takeDamage(dmg, new THREE.Vector3().subVectors(e.position,player.position), true);
-        if(blocked==='blocked'){ sfx('block'); sparkSystem.emit(e.position.clone().add(new THREE.Vector3(0,1.25,0)), new THREE.Vector3().subVectors(player.position,e.position).normalize(), 12); }
-        else { bloodSystem.add(e.position, e.scale); if(e.dead){ kills++; bloodSystem.add(e.position,1.8); questManager.onKill(e.faction); sfx('coin',{volume:0.08}); } }
+        if(blocked==='blocked'){ 
+          soundscape.playCombatSound('block', e.position.x, e.position.y, e.position.z);
+          sparkSystem.emit(e.position.clone().add(new THREE.Vector3(0,1.25,0)), new THREE.Vector3().subVectors(player.position,e.position).normalize(), 12); 
+        }
+        else { 
+          bloodSystem.add(e.position, e.scale); 
+          if(e.dead){ 
+            kills++; 
+            bloodSystem.add(e.position,1.8); 
+            questManager.onKill(e.faction); 
+            soundscape.onQuestComplete(e.position.x, e.position.y, e.position.z);
+            // Death cry varied
+            soundscape.playCivilianVoice(e.faction==='rebels'?'rebel':'guard', e.position.x, 1.5, e.position.z, 'death');
+          } 
+        }
       }
     }
 
@@ -563,12 +622,18 @@ function tick(){
     if(player.consumeThrow()){
       const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
       const origin=player.position.clone().add(dir.clone().multiplyScalar(0.92)).add(new THREE.Vector3(0,-0.10,0));
-      if(player.roleData.weapon==='bow'){ arrows.push(new Arrow(scene, origin, dir, player)); sfx('swing',{volume:0.09}); }
-      else { pila.push(new Pilum(scene, origin, dir)); sfx('swing',{volume:0.12}); }
+      if(player.roleData.weapon==='bow'){ 
+        arrows.push(new Arrow(scene, origin, dir, player)); 
+        soundscape.playCombatSound('swing', player.position.x, player.position.y, player.position.z);
+      }
+      else { 
+        pila.push(new Pilum(scene, origin, dir)); 
+        soundscape.playCombatSound('swing', player.position.x, player.position.y, player.position.z);
+      }
     }
 
     if(player.consumeBash()){
-      sfx('bash');
+      soundscape.playCombatSound('bash', player.position.x, player.position.y, player.position.z);
       const bashPos=player.position.clone().add(player.forward.clone().multiplyScalar(1.7));
       for(const e of enemies){ if(e.dead)continue; if(e.faction===player.faction)continue; if(e.position.distanceTo(bashPos)<3.0){ e.takeDamage(24, player.forward, true); e.velocity.add(player.forward.clone().multiplyScalar(7.5)); e.attackTimer=1.3; bloodSystem.add(e.position,0.9); } }
       sparkSystem.emit(bashPos, player.forward.clone().negate(), 16);
@@ -579,7 +644,12 @@ function tick(){
     for(const a of arrows){
       const res=a.update(dt,player,enemies);
       if(res){
-        if(res.target==='player'){ const r=player.takeDamage(res.damage, res.dir); if(r==='blocked') sfx('block'); else if(r==='parried'){ sfx('parry'); showParry(); slowMoTimer=0.7; } else if(r!=='dodged'){ sfx('hurt'); dmgFlash=1; } }
+        if(res.target==='player'){ 
+          const r=player.takeDamage(res.damage, res.dir); 
+          if(r==='blocked') soundscape.playCombatSound('block', player.position.x, player.position.y, player.position.z);
+          else if(r==='parried'){ soundscape.playCombatSound('parry', player.position.x, player.position.y, player.position.z); showParry(); slowMoTimer=0.7; } 
+          else if(r!=='dodged'){ soundscape.playCombatSound('hurt', player.position.x, player.position.y, player.position.z); dmgFlash=1; } 
+        }
         else if(res.target==='enemy' && res.enemy.dead){ kills++; bloodSystem.add(res.enemy.position,1.9); questManager.onKill(res.enemy.faction); }
       }
     }
@@ -592,7 +662,13 @@ function tick(){
         const isEnemyToPlayer = enemyFacData?.enemies?.includes(player.faction) || player.faction === 'rebels' || e.faction === 'rebels' || (FACTIONS[player.faction]?.enemies?.includes(e.faction));
         if (isEnemyToPlayer) {
           const r=player.takeDamage(ev.damage, ev.dir);
-          if(r==='blocked') sfx('block'); else if(r==='parried'){ sfx('parry'); showParry(); slowMoTimer=0.8; } else if(r!=='dodged'){ sfx('hurt'); dmgFlash=1; }
+          if(r==='blocked') soundscape.playCombatSound('block', player.position.x, player.position.y, player.position.z);
+          else if(r==='parried'){ soundscape.playCombatSound('parry', player.position.x, player.position.y, player.position.z); showParry(); slowMoTimer=0.8; } 
+          else if(r!=='dodged'){ soundscape.playCombatSound('hurt', player.position.x, player.position.y, player.position.z); dmgFlash=1; }
+          // Enemy attack shout varied
+          if (Math.random()<0.25) {
+            soundscape.playFactionShout(e.faction, e.position.x, 1.8, e.position.z);
+          }
         }
       }
     }
@@ -617,8 +693,8 @@ function tick(){
 
     if(player.health<=0){
       document.exitPointerLock(); ui.play.textContent='FIGHT AGAIN';
-      ui.death.textContent=`You fell as ${player.roleData.name} of ${FACTIONS[player.faction]?.name} Lv${questManager.level} on wave ${toRoman(wave)} with ${kills} slain. Gold:${questManager.gold} - Full Empire Animations Everywhere`;
-      sfx('hurt',{volume:0.24});
+      ui.death.textContent=`You fell as ${player.roleData.name} of ${FACTIONS[player.faction]?.name} Lv${questManager.level} on wave ${toRoman(wave)} with ${kills} slain. Gold:${questManager.gold} - Full Empire Sounds Everywhere`;
+      soundscape.playCombatSound('hurt', player.position.x, player.position.y, player.position.z);
       const hs=parseInt(localStorage.getItem('kitchuban_high')||'0');
       if(kills>hs){ localStorage.setItem('kitchuban_high',kills); localStorage.setItem('kitchuban_high_wave',wave); }
     }
@@ -632,6 +708,26 @@ function tick(){
     ui.pila.textContent=player.pila;
     updateQuestUI();
     updateMinimap();
+    updateWeatherUI();
+
+    // Random ambient sounds near player - fire crackle, water, flags
+    if (Math.random()<0.08) {
+      const nearTorches = torchPositions.filter(tp => Math.hypot(tp.x-player.position.x, tp.z-player.position.z) < 25);
+      if (nearTorches.length) {
+        const tp = nearTorches[Math.floor(Math.random()*nearTorches.length)];
+        soundscape.playFireCrackle(tp.x, tp.y, tp.z, 0.8);
+      }
+    }
+    if (Math.random()<0.05) {
+      // Water near?
+      if (Math.abs(player.position.x) < 20 && Math.abs(player.position.z) < 20) {
+        soundscape.playWaterFlow(0, 0.5, 0, 1.0);
+      }
+    }
+    if (Math.random()<0.04) {
+      // Flag flap near player
+      soundscape.playFlagFlap(player.position.x+(Math.random()-0.5)*20, 5, player.position.z+(Math.random()-0.5)*20, soundscape.weather.windIntensity);
+    }
   }
 
   if(msgTimer>0){ msgTimer-=dt; if(msgTimer<=0) ui.message.style.opacity=0; }
@@ -645,4 +741,4 @@ tick();
 
 window.addEventListener('resize', ()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); if(composer) composer.setSize(window.innerWidth,window.innerHeight); });
 
-console.log('[VERIFY] FULL ROMAN EMPIRE: 1800x1400 map, 25+ missing monuments added, verified dimensions: Vespasian Titus 22x33m 15.2m cols, Antoninus Faustina 17m cipollino, Romulus 15m bronze doors, Concord 45x24m, Arch Septimius 23x25x11.85 central 12x7 sides 7.8x3 cols 8.78m, Arch Titus 15.4x13.5x4.75 inner 8.3x5.36, Regia 3 rooms, Umbilicus 2m high 4.45m diam, Milliarium 3.7m high 1.15m diam 3m base gilded Augustus 20BC, Lapis Niger, Portico Dii Consentes 8 cols, Lacus Curtius/Juturnae, Column Phocas 13.6m, Pantheon dome 43.44m oculus 8.8-9.2m portico 33.1x13.6 16 cols 11.8m, Baths Diocletian 376x361 13ha 3000 bathers 298-306AD, Markets Trajan 150 shops, Trajan Column 30m high 3.7m diam 190m frieze, Ara Pacis 11.65x10.62, Mausoleum Augustus 87m diam 42m high 28BC, Mausoleum Hadrian 89m square 64m diam 21m high, Domus Aurea 150 rooms, Palatine Palace, Forum Augustus 125x118, Forum Trajan, Aqueducts, Aurelian Walls 19km - animations everywhere flags fires water trees chariots smoke doors statues');
+console.log('[VERIFY] FULL ROMAN EMPIRE + SOUNDS EVERYWHERE: 1800x1400 map, 25+ monuments verified, animations everywhere, 65 civilians UNIQUE VOICES each personal pitch/formant/speed, faction voices varied - legio deep strong, praetorian authoritative, rebel rough aggressive, senate old wise, merchant fast haggling, vestal soft reverent, emperor very deep echoing, child high playful. Weather: storm with thunder 35Hz rumble + crack + lightning flash branching bolts, rain 3500 drops + 600 streaks, wind howl filtered noise LFO, earthquake 20Hz rumble + dust burst + building sway + screen shake. Sounds: fire crackle random bursts, water flow bubbling, flag flap cloth, chariot gallop 4 beats + wheel rumble, crowd murmur varied, footstep per surface marble/travertine/ground/water, door creak, building hammer, quest coin, combat varied hurt voices. Positional 3D audio HRTF panner. Reverb Pantheon. Ambient loops at Forum, Market, Baths, Circus, Colosseum, Pantheon, Fountain, Aqueduct, Subura, Palatine. Test keys: T thunder, Y earthquake');

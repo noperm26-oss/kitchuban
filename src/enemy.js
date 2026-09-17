@@ -38,6 +38,9 @@ function lerp(a,b,t){return a+(b-a)*t;}
 export class Enemy {
   constructor(scene, pos, type = null, faction = null) {
     this.scene = scene;
+    // Unique voice per enemy - not one voice for everyone
+    this.voiceId = `enemy-${Math.floor(Math.random()*100000)}`;
+    this.voiceProfile = null;
     if (!type) {
       const r = Math.random();
       if (r < 0.28) type = 'swordsman';
@@ -60,6 +63,24 @@ export class Enemy {
     }
     this.faction = faction;
     this.factionData = FACTIONS[faction] || FACTIONS.legio;
+    // Assign unique voice profile per faction + personal variation
+    const factionVoiceMap = {
+      legio: 'legionary',
+      praetorian: 'praetorian',
+      senate: 'senate',
+      rebels: 'rebel',
+      merchants: 'merchant',
+      vestals: 'vestal',
+      emperor: 'emperor',
+    };
+    const voiceKey = factionVoiceMap[faction] || 'citizen_m';
+    const baseProfile = VOICE_PROFILES[voiceKey] || VOICE_PROFILES.citizen_m;
+    this.voiceProfile = {
+      ...baseProfile,
+      personalPitch: baseProfile.base + (Math.random()-0.5)*baseProfile.range*0.7,
+      personalSpeed: baseProfile.speed * (0.85 + Math.random()*0.3),
+      id: `${voiceKey}-${Math.floor(Math.random()*10000)}`,
+    };
 
     this.position = pos.clone(); this.position.y = 0;
     this.velocity = new THREE.Vector3();
