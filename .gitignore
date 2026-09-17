@@ -1,0 +1,8 @@
+# Node - not needed, static only
+node_modules/
+npm-debug.log
+test_verify*.mjs
+
+# OS
+.DS_Store
+.env
