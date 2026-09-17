@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchuban — Legio Aeterna</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="hud">
+    <div id="crosshair"></div>
+    <div id="topbar">
+      <div class="stat">WAVE <span id="wave">1</span></div>
+      <div class="stat">HOSTES CAESI <span id="kills">0</span></div>
+      <div class="stat">SUPERSUNT <span id="remaining">0</span></div>
+    </div>
+    <div id="bottombar">
+      <div id="healthwrap"><div id="health"></div><span id="healthtxt">100</span></div>
+      <div id="stamwrap"><div id="stamina"></div></div>
+      <div id="pila">PILA: <span id="pilacount">3</span></div>
+    </div>
+    <div id="message"></div>
+    <div id="damage"></div>
+  </div>
+
+  <div id="menu">
+    <div class="panel">
+      <h1>LEGIO AETERNA</h1>
+      <p class="sub">Anno DCCC ab Urbe Condita &mdash; The Forum has fallen to rebels. Retake it.</p>
+      <ul class="controls">
+        <li><b>W A S D</b> move &nbsp; <b>SHIFT</b> sprint &nbsp; <b>SPACE</b> jump</li>
+        <li><b>Mouse</b> look &nbsp; <b>LMB</b> strike with gladius</li>
+        <li><b>RMB</b> raise scutum (block) &nbsp; <b>F</b> throw pilum</li>
+        <li><b>ESC</b> pause</li>
+      </ul>
+      <p class="note">No firearms exist in this world. Steel only.</p>
+      <button id="play">ENTER THE FORUM</button>
+      <p id="deathmsg"></p>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
