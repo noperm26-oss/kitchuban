@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { colliders, spawnPoints, factionZones } from './world.js';
 import { MAT } from './materials.js';
+import { raycastColliders, StuckDetector } from './anticheat.js';
 
 const skinMat = MAT.skin;
 const steelMat = MAT.iron;
@@ -447,13 +448,17 @@ export class Enemy {
 
 export class Pilum {
   constructor(scene, origin, dir){
-    this.scene=scene; this.position=origin.clone(); this.velocity=dir.clone().multiplyScalar(33); this.life=0; this.stuck=false;
+    this.scene=scene; this.position=origin.clone(); this.prevPos=origin.clone(); this.velocity=dir.clone().multiplyScalar(33); this.life=0; this.stuck=false;
     const g=new THREE.Group(); const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,1.95,8), woodMat); const shank=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.68,8), steelMat); shank.position.y=1.25; const tip=new THREE.Mesh(new THREE.ConeGeometry(0.034,0.17,8), steelMat); tip.position.y=1.64; g.add(shaft,shank,tip); g.rotation.x=Math.PI/2; this.mesh=new THREE.Group(); this.mesh.add(g); this.mesh.position.copy(this.position); scene.add(this.mesh);
   }
   update(dt,enemies){
     this.life+=dt; if(this.stuck){ if(this.life>8){ this.scene.remove(this.mesh); this.removed=true; } return null; }
+    this.prevPos.copy(this.position);
     this.velocity.y-=13.5*dt; this.position.addScaledVector(this.velocity,dt); this.mesh.position.copy(this.position); this.mesh.lookAt(this.position.clone().add(this.velocity));
     if(this.position.y<0.13){ this.stuck=true; this.position.y=0.13; return null; }
+    // Raycast to prevent tunneling through thin walls
+    const hit = raycastColliders(this.prevPos, this.position, colliders);
+    if (hit) { this.stuck=true; this.position.copy(hit.point); return null; }
     for(const b of colliders) if(b.containsPoint(this.position)){ this.stuck=true; return null; }
     for(const e of enemies){ if(e.dead)continue; if(e._box().containsPoint(this.position)){ this.scene.remove(this.mesh); this.removed=true; const to=new THREE.Vector3().subVectors(e.position,this.position).setY(0); const fromFront=to.length()>0.1?e.group.getWorldDirection(new THREE.Vector3()).dot(to.normalize())<-0.2:false; const res=e.takeDamage(82,this.velocity,fromFront); if(res==='blocked'){ this.stuck=false; this.velocity.multiplyScalar(-0.32); this.position.addScaledVector(this.velocity,0.12); return null; } return e; } }
     return null;
@@ -462,13 +467,16 @@ export class Pilum {
 
 export class Arrow {
   constructor(scene, origin, dir, owner=null){
-    this.scene=scene; this.owner=owner; this.position=origin.clone(); this.velocity=dir.clone().multiplyScalar(40); this.life=0; this.stuck=false;
+    this.scene=scene; this.owner=owner; this.position=origin.clone(); this.prevPos=origin.clone(); this.velocity=dir.clone().multiplyScalar(40); this.life=0; this.stuck=false;
     const g=new THREE.Group(); const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.010,0.010,0.78,6), woodMat); const head=new THREE.Mesh(new THREE.ConeGeometry(0.020,0.08,6), steelMat); head.position.y=0.42; const fletch=new THREE.Mesh(new THREE.BoxGeometry(0.042,0.13,0.022), new THREE.MeshStandardMaterial({color:0xb03030})); fletch.position.y=-0.34; g.add(shaft,head,fletch); g.rotation.x=Math.PI/2; this.mesh=new THREE.Group(); this.mesh.add(g); this.mesh.position.copy(this.position); scene.add(this.mesh);
   }
   update(dt,player,enemies){
     this.life+=dt; if(this.stuck){ if(this.life>6){ this.scene.remove(this.mesh); this.removed=true; } return null; }
+    this.prevPos.copy(this.position);
     this.velocity.y-=10.5*dt; this.position.addScaledVector(this.velocity,dt); this.mesh.position.copy(this.position); this.mesh.lookAt(this.position.clone().add(this.velocity));
     if(this.position.y<0.12){ this.stuck=true; this.position.y=0.12; return null; }
+    const hit = raycastColliders(this.prevPos, this.position, colliders);
+    if (hit) { this.stuck=true; this.position.copy(hit.point); return null; }
     for(const b of colliders) if(b.containsPoint(this.position)){ this.stuck=true; return null; }
     if(player && this.owner!==player){ const toP=new THREE.Vector3().subVectors(player.position,this.position); if(toP.length()<1.1 && this.position.y>0.5 && this.position.y<2.3){ this.scene.remove(this.mesh); this.removed=true; return {target:'player', damage:this.owner?this.owner.damage:19, dir:this.velocity.clone().normalize(), faction:this.owner?.faction}; } }
     for(const e of enemies){ if(e===this.owner||e.dead)continue; if(e._box().containsPoint(this.position)){ this.scene.remove(this.mesh); this.removed=true; const dmg = this.owner?.faction==='rebels'?35:32; const blocked=e.takeDamage(dmg,this.velocity, true); if(blocked==='blocked') return null; return {target:'enemy', enemy:e, faction:this.owner?.faction}; } }
@@ -476,3 +484,6 @@ export class Arrow {
     return null;
   }
 }
+
+// Global stuck detector for enemies
+export const enemyStuckDetector = new StuckDetector();

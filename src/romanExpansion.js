@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { MAT } from './materials.js';
 import { colliders, torches, spawnPoints, factionZones, buildingInteriors } from './world.js';
 import { createFlutedColumnGeometry, createCorinthianCapital, createEntablature, createPediment, createTiledRoof, createRomanStatue, createBronzeStatue } from './architecture.js';
-import { createAnimatedFlag, createAnimatedFire, createAnimatedWater, createAnimatedSmoke, createAnimatedDoor, createAnimatedStatue } from './animations.js';
+import { createAnimatedFlag, createAnimatedFire, createAnimatedWater, createAnimatedSmoke, createAnimatedDoor, createAnimatedStatue, createAnimatedAqueductWater, registerBuildingForEarthquake } from './animations.js';
 
 function addBox(scene, w,h,d,x,y,z,mat,solid=true,ry=0){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
@@ -74,6 +74,7 @@ export function templeVespasianTitus(scene,x,z){
   // Animated flag on top - Flavian dynasty
   createAnimatedFlag(scene,x,topY+colH+4,z,0x8a1a1a,1.5,1);
   createAnimatedFire(scene,x,topY+0.5,z-3,0.6,true);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -103,6 +104,7 @@ export function templeAntoninusFaustina(scene,x,z){
   buildingInteriors.push({type:'temple_antoninus_faustina', x,z, interior:true});
   torches.push({x:x-4,y:topY+1.5,z:z+9}); torches.push({x:x+4,y:topY+1.5,z:z+9});
   createAnimatedFlag(scene,x,topY+colH+5,z,0xd9a441,1.5,1);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -138,6 +140,7 @@ export function templeRomulus(scene,x,z){
   buildingInteriors.push({type:'temple_romulus', x,z, interior:true});
   torches.push({x:x+5,y:2.5,z:z}); torches.push({x:x-5,y:2.5,z:z});
   createAnimatedFlag(scene,x,1.2+cellaH+2,z,0x6a0a8a,1.2,0.8);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -166,6 +169,7 @@ export function templeConcord(scene,x,z){
   buildingInteriors.push({type:'temple_concord', x,z, interior:true});
   torches.push({x:x-6,y:topY+1,z:z+6}); torches.push({x:x+6,y:topY+1,z:z+6});
   createAnimatedFlag(scene,x,topY+colH+4,z,0xffd777,1.4,0.9);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -212,6 +216,7 @@ export function archSeptimiusSeverus(scene,x,z){
   colliders.push(new THREE.Box3(new THREE.Vector3(x-W/2,0,z-D/2), new THREE.Vector3(x+W/2,H+atticH,z+D/2)));
   torches.push({x:x-5,y:3,z:z+3}); torches.push({x:x+5,y:3,z:z+3});
   createAnimatedFlag(scene,x,H+atticH+3,z,0x8a1a1a,1.8,1.1);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -238,6 +243,7 @@ export function archTitus(scene,x,z){
   colliders.push(new THREE.Box3(new THREE.Vector3(x-W/2,0,z-D/2), new THREE.Vector3(x+W/2,H,z+D/2)));
   torches.push({x:x-3,y:2.5,z:z+1.5}); torches.push({x:x+3,y:2.5,z:z+1.5});
   createAnimatedFlag(scene,x,H+2,z,0xd9a441,1.2,0.8);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -267,6 +273,7 @@ export function regia(scene,x,z){
   buildingInteriors.push({type:'regia', x,z, interior:true});
   torches.push({x:x-4,y:2,z:z+6}); torches.push({x:x+4,y:2,z:z+6});
   createAnimatedFire(scene,x,0.4,z+2,0.5,true);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -290,6 +297,7 @@ export function umbilicusAndMilliarium(scene,x,z){
   torches.push({x:x-3,y:1.5,z:z+2}); torches.push({x:x+3,y:1.5,z:z+2});
   // Animated golden glow
   const glowLight=new THREE.PointLight(0xffd700,1.5,6,2); glowLight.position.set(3,2,0); g.add(glowLight);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -306,6 +314,7 @@ export function lapisNiger(scene,x,z){
   colliders.push(new THREE.Box3(new THREE.Vector3(x-2,0,z-2), new THREE.Vector3(x+2,1.5,z+2)));
   buildingInteriors.push({type:'lapis_niger', x,z, interior:false});
   createAnimatedFire(scene,x,0.6,z,0.3,true);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -326,6 +335,7 @@ export function porticoDiiConsentes(scene,x,z,w=40){
   colliders.push(new THREE.Box3(new THREE.Vector3(x-w/2,0,z-2.5), new THREE.Vector3(x+w/2,5,z+2.5)));
   buildingInteriors.push({type:'portico_dii_consentes', x,z, interior:true});
   for(let i=0;i<colCount;i++){ const cx=x-w/2+1.5+i*(w-3)/(colCount-1); torches.push({x:cx,y:2.5,z:z+1.5}); }
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -350,6 +360,7 @@ export function lacusCurtiusJuturnae(scene,x,z){
   buildingInteriors.push({type:'lacus', x,z, interior:false});
   createAnimatedWater(scene,x-4,0.62,z,3.5,4.5,0x3a6f8a);
   createAnimatedWater(scene,x+4,0.26,z,6,8,0x4a8aaa);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -366,6 +377,7 @@ export function columnPhocas(scene,x,z){
   buildingInteriors.push({type:'column_phocas', x,z, interior:false});
   torches.push({x:x+1.5,y:1.2,z:z}); torches.push({x:x-1.5,y:1.2,z:z});
   createAnimatedFlag(scene,x,colH+3,z,0xffd777,1,0.7);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -407,6 +419,7 @@ export function pantheon(scene,x,z){
   createAnimatedFlag(scene,x,h+r+1,z,0xffd777,2,1.2);
   // Smoke from oculus for incense
   createAnimatedSmoke(scene,x,h+r-1,z,15);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -445,6 +458,7 @@ export function bathsDiocletian(scene,x,z){
   torches.push({x:x-12,y:3,z:z+15}); torches.push({x:x+12,y:3,z:z+15});
   createAnimatedSmoke(scene,x,2,z+8,25);
   createAnimatedSmoke(scene,x,2,z-13,20);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -472,6 +486,7 @@ export function marketsTrajan(scene,x,z){
   buildingInteriors.push({type:'markets_trajan', x,z, interior:true});
   torches.push({x:x,y:2,z:z+5}); torches.push({x:x-8,y:2,z:z+8}); torches.push({x:x+8,y:2,z:z+8});
   createAnimatedFlag(scene,x,levels*4.5+2,z,0x2a5a8a,1.5,1);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -495,6 +510,7 @@ export function trajansColumn(scene,x,z){
   buildingInteriors.push({type:'trajan_column', x,z, interior:false});
   torches.push({x:x+2,y:1.5,z:z}); torches.push({x:x-2,y:1.5,z:z});
   createAnimatedFlag(scene,x,colH+7,z,0x8a1a1a,1.2,0.8);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -516,6 +532,7 @@ export function araPacis(scene,x,z){
   buildingInteriors.push({type:'ara_pacis', x,z, interior:true});
   torches.push({x:x-3,y:2,z:z+4}); torches.push({x:x+3,y:2,z:z+4});
   createAnimatedFire(scene,x,0.8,z,0.4,true);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -535,6 +552,7 @@ export function mausoleumAugustus(scene,x,z){
   buildingInteriors.push({type:'mausoleum_augustus', x,z, interior:true});
   torches.push({x:x+baseR+1,y:2,z:z}); torches.push({x:x-baseR-1,y:2,z:z});
   createAnimatedFlag(scene,x,baseH+drumH+6,z,0x6a0a8a,2,1.2);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -555,6 +573,7 @@ export function mausoleumHadrian(scene,x,z){
   buildingInteriors.push({type:'mausoleum_hadrian', x,z, interior:true});
   torches.push({x:x+squareW/2+1,y:2,z:z}); torches.push({x:x-squareW/2-1,y:2,z:z});
   createAnimatedFlag(scene,x,squareH+cylH+4,z,0x8a1a1a,1.8,1.1);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -579,6 +598,7 @@ export function domusAurea(scene,x,z){
   torches.push({x:x-8,y:3,z:z+12}); torches.push({x:x+8,y:3,z:z+12});
   createAnimatedFlag(scene,x,outerH+3,z,0xd9a441,1.5,1);
   createAnimatedSmoke(scene,x,outerH,z,15);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -607,10 +627,11 @@ export function palatinePalace(scene,x,z){
   torches.push({x:x-10,y:4,z:z+18}); torches.push({x:x+10,y:4,z:z+18});
   createAnimatedFlag(scene,x,outerH+5,z,0x6a0a8a,2.5,1.5);
   factionZones['emperor_palace']={x:x, z:z, w:60, d:45, color:0x6a0a8a};
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
-// 22. Aqueduct - Aqua Marcia etc
+// 22. Aqueduct - Aqua Marcia etc - ANIMATED water flow
 export function aqueduct(scene, x1,z1,x2,z2, height=12){
   const g=new THREE.Group();
   const dx=x2-x1, dz=z2-z1, len=Math.hypot(dx,dz), ang=Math.atan2(dz,dx);
@@ -619,12 +640,14 @@ export function aqueduct(scene, x1,z1,x2,z2, height=12){
     const t=i/archCount;
     const ax=x1+dx*t, az=z1+dz*t;
     const pier=new THREE.Mesh(new THREE.BoxGeometry(1.5,height,1.5),MAT.brick); pier.position.set(ax,height/2,az); pier.castShadow=true; g.add(pier);
+    registerBuildingForEarthquake(pier, ax, az);
     if(i<archCount-1){
       const arch=new THREE.Mesh(new THREE.TorusGeometry(3.2,0.25,8,16,Math.PI),MAT.brick); arch.rotation.x=Math.PI/2; arch.rotation.y=-ang; arch.position.set(ax+dx/archCount/2,height-3,az+dz/archCount/2); g.add(arch);
     }
   }
   const channel=new THREE.Mesh(new THREE.BoxGeometry(len,1,2),MAT.marble); channel.position.set((x1+x2)/2,height+0.5,(z1+z2)/2); channel.rotation.y=-ang; g.add(channel);
-  const water=new THREE.Mesh(new THREE.BoxGeometry(len-2,0.3,1.5),MAT.water); water.position.set((x1+x2)/2,height+0.8,(z1+z2)/2); water.rotation.y=-ang; g.add(water);
+  // Animated water flow - directional
+  createAnimatedAqueductWater(scene, x1,z1,x2,z2, height+0.8, 1.5);
   scene.add(g);
   // No collider for aqueduct - allow passing under arches
   return g;
@@ -690,6 +713,7 @@ export function forumAugustus(scene,x,z){
   buildingInteriors.push({type:'forum_augustus', x,z, interior:true});
   torches.push({x:x-12,y:3,z:z}); torches.push({x:x+12,y:3,z:z});
   createAnimatedFlag(scene,x,12,z,0x8a1a1a,1.5,1);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -710,6 +734,7 @@ export function forumTrajan(scene,x,z){
   buildingInteriors.push({type:'forum_trajan', x,z, interior:true});
   torches.push({x:x-15,y:3,z:z}); torches.push({x:x+15,y:3,z:z});
   createAnimatedFlag(scene,x,14,z,0xd9a441,2,1.2);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 

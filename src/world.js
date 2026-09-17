@@ -19,6 +19,8 @@ import {
   createAnimatedSmoke,
   createAnimatedDoor,
   createAnimatedStatue,
+  createAnimatedAqueductWater,
+  registerBuildingForEarthquake,
 } from './animations.js';
 
 export const colliders = [];
@@ -137,6 +139,7 @@ function templeJupiter(scene, x, z) {
   createAnimatedFlag(scene, x+12, topY+colH+2, z, 0x8a1a1a, 1.5, 1);
   createAnimatedFire(scene, x, topY+0.5, z+18, 0.8, true);
   createAnimatedSmoke(scene, x, topY+colH+2, z-5, 12);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -174,6 +177,7 @@ function templeSaturn(scene, x, z) {
   createAnimatedFire(scene, x-6, 0.6, z-5, 0.6, true);
   createAnimatedFire(scene, x+6, 0.6, z-5, 0.6, true);
   createAnimatedSmoke(scene, x, topY+2, z, 10);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -202,6 +206,7 @@ function templeVesta(scene, x, z) {
   createAnimatedFire(scene, x-7, 2.2, z, 0.5, true);
   createAnimatedSmoke(scene, x, 3, z, 20);
   createAnimatedFlag(scene, x, 10, z, 0xffd777, 1.8, 1.1);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -259,6 +264,7 @@ function tabularium(scene, x, z, w=120, h=18) {
   colliders.push(new THREE.Box3(new THREE.Vector3(x-w/2,0,z-4), new THREE.Vector3(x+w/2,h+1,z+4)));
   buildingInteriors.push({type:'tabularium', x,z, interior:true});
   createAnimatedFlag(scene, x, h+3, z, 0xd9a441, 2, 1.2);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -314,6 +320,7 @@ function basilicaJulia(scene, x, z, w=52, d=102, ry=0) {
   createAnimatedFlag(scene, x, topY+14, z+d/2, 0x2a5a8a, 1.8, 1);
   createAnimatedFlag(scene, x, topY+14, z-d/2, 0x2a5a8a, 1.8, 1);
   for(let i=0;i<3;i++){ createAnimatedFire(scene, x-w/2+5+i*6, topY+1, z, 0.4, true); }
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -342,6 +349,7 @@ function basilicaAemilia(scene, x, z, w=50, d=100, ry=0) {
   colliders.push(new THREE.Box3(new THREE.Vector3(x-w/2, topY, z-d/2), new THREE.Vector3(x+w/2, topY+13, z+d/2))));
   buildingInteriors.push({type:'basilica_aemilia', x,z, interior:true});
   createAnimatedFlag(scene, x, topY+16, z, 0xd9a441, 2.2, 1.3);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -373,6 +381,7 @@ function basilicaMaxentius(scene, x, z) {
   buildingInteriors.push({type:'basilica_maxentius', x,z, interior:true});
   createAnimatedFlag(scene, x, vaultH+6, z, 0x8a1a1a, 3, 1.8);
   createAnimatedSmoke(scene, x, 2, z, 15);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -400,6 +409,7 @@ function templeCastorPollux(scene, x, z) {
   buildingInteriors.push({type:'temple_castor', x,z, interior:true});
   createAnimatedFlag(scene, x, topY+colH+6, z+18, 0x2a5a8a, 2, 1.2);
   createAnimatedFire(scene, x, topY+0.5, z+12, 0.6, true);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -427,6 +437,7 @@ function templeCaesar(scene, x, z) {
   buildingInteriors.push({type:'temple_caesar', x,z, interior:true});
   createAnimatedFlag(scene, x, topY+colH+4, z+8, 0x8a1a1a, 1.5, 1);
   createAnimatedFire(scene, x, topY+0.5, z-2, 0.5, true);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -500,6 +511,7 @@ function domus(scene, x, z) {
   buildingInteriors.push({type:'domus', x,z, interior:true});
   createAnimatedFire(scene, x-3, 0.75, z+5, 0.3, false);
   createAnimatedDoor(scene, x, 0, z+outerD/2, 2.0, 3.2, MAT.woodDark);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -517,6 +529,7 @@ function fountain(scene, x, z) {
   createAnimatedWater(scene, x, 4.45, z, 3.4, 3.4, 0x5a9acc);
   // Splash particles via smoke but water-like
   createAnimatedSmoke(scene, x, 4.5, z, 8);
+  registerBuildingForEarthquake(group, x, z);
   return group;
 }
 
@@ -551,6 +564,7 @@ function insula(scene, x, z, w=18, d=22, h=12) {
   scene.add(g); g.updateMatrixWorld(true); colliders.push(new THREE.Box3().setFromObject(g));
   colliders.push(new THREE.Box3(new THREE.Vector3(x-w*0.3,0,z+d/2-2), new THREE.Vector3(x+w*0.3,1.0,z+d/2-1))));
   if(Math.random()<0.3) createAnimatedSmoke(scene, x, h+0.5, z, 6);
+  registerBuildingForEarthquake(g, x, z);
 }
 
 function bathsCaracalla(scene, x, z) {
@@ -575,6 +589,7 @@ function bathsCaracalla(scene, x, z) {
   createAnimatedSmoke(scene, x, 2, z-15, 20);
   createAnimatedSmoke(scene, x, 2, z+10, 15);
   createAnimatedFlag(scene, x, outerH+2, z+outerD/2, 0x2a5a8a, 2, 1.2);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -599,6 +614,7 @@ function circusMaximus(scene, x, z) {
   }
   createAnimatedFlag(scene, x, 5, z+width/2+5, 0x8a1a1a, 2.5, 1.5);
   createAnimatedFlag(scene, x, 5, z-width/2-5, 0x2a5a8a, 2.5, 1.5);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 
@@ -628,6 +644,7 @@ function colosseum(scene, x, z) {
   createAnimatedFlag(scene, x+outerR1, height+1, z, 0xd9a441, 2, 1.2);
   createAnimatedFlag(scene, x-outerR1, height+1, z, 0xd9a441, 2, 1.2);
   createAnimatedSmoke(scene, x, 1, z, 10);
+  registerBuildingForEarthquake(g, x, z);
   return g;
 }
 

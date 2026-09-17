@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { MAT } from './materials.js';
+import { validateResources, MAX_CAPS, saveWithChecksum, loadWithChecksum } from './anticheat.js';
 
 export const RESOURCES = {
   grain: { name: 'Grain', color: 0xe8d8a0, value: 12, icon: '🌾' },
@@ -19,9 +20,26 @@ export class EconomyManager {
   constructor(scene, player) {
     this.scene = scene;
     this.player = player;
+    this._elapsed = 0;
     this.resources = {}; // resource -> count
     for (const r of Object.keys(RESOURCES)) this.resources[r] = 0;
-    this.resources.gold = parseInt(localStorage.getItem('kitchuban_gold') || '0');
+    // Anti-cheat validation for gold and resources
+    const saved = loadWithChecksum('kitchuban_resources', null);
+    if (saved) {
+      const { cleaned, cheated } = validateResources(saved);
+      this.resources = cleaned;
+      if (cheated) {
+        console.warn('[ANTICHEAT] Resources had cheat, cleaned and saved');
+        saveWithChecksum('kitchuban_resources', this.resources);
+        localStorage.setItem('kitchuban_gold', this.resources.gold.toString());
+      }
+    } else {
+      this.resources.gold = parseInt(localStorage.getItem('kitchuban_gold') || '0');
+      if (this.resources.gold > MAX_CAPS.gold) {
+        this.resources.gold = MAX_CAPS.gold;
+        localStorage.setItem('kitchuban_gold', this.resources.gold.toString());
+      }
+    }
     
     this.resourceNodes = []; // {mesh, type, x,z, amount, respawnTimer}
     this.buildings = []; // player built buildings
@@ -152,6 +170,7 @@ export class EconomyManager {
   }
 
   update(dt) {
+    this._elapsed += dt;
     for (const node of this.resourceNodes) {
       if (node.collected) {
         node.respawnTimer -= dt;
@@ -162,8 +181,8 @@ export class EconomyManager {
           node.mesh.visible = true;
         }
       } else {
-        // Bobbing animation
-        node.mesh.position.y = Math.sin(Date.now()*0.003 + node.x) * 0.1;
+        // Bobbing animation - uses elapsed time (fixed from Date.now for deterministic tick)
+        node.mesh.position.y = Math.sin(this._elapsed*3.0 + node.x*0.01) * 0.1;
         // Check if player near (2.5m)
         const dist = Math.hypot(this.player.position.x - node.x, this.player.position.z - node.z);
         if (dist < 2.8) {
@@ -184,8 +203,16 @@ export class EconomyManager {
     
     console.log(`[ECONOMY] Collected ${amount} ${node.type}, total ${this.resources[node.type]}`);
     
-    // Visual feedback - floating text would be nice, but we log and save
-    localStorage.setItem('kitchuban_resources', JSON.stringify(this.resources));
+    // Anti-cheat caps
+    for (const [k,v] of Object.entries(this.resources)) {
+      if (MAX_CAPS[k] && v > MAX_CAPS[k]) {
+        this.resources[k] = MAX_CAPS[k];
+        console.warn(`[ANTICHEAT] Capped ${k} to ${MAX_CAPS[k]}`);
+      }
+    }
+    
+    // Save with checksum
+    saveWithChecksum('kitchuban_resources', this.resources);
     localStorage.setItem('kitchuban_gold', this.resources.gold.toString());
     
     if (node.amount <= 0) {
@@ -209,8 +236,9 @@ export class EconomyManager {
     if (!this.canAfford(cost)) return false;
     for (const [res, amt] of Object.entries(cost)) {
       this.resources[res] -= amt;
+      if (this.resources[res] <0) this.resources[res]=0;
     }
-    localStorage.setItem('kitchuban_resources', JSON.stringify(this.resources));
+    saveWithChecksum('kitchuban_resources', this.resources);
     localStorage.setItem('kitchuban_gold', this.resources.gold.toString());
     return true;
   }

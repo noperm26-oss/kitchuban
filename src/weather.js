@@ -84,20 +84,22 @@ export class RainSystem {
   setIntensity(intensity, playerPos) {
     this.intensity = intensity;
     this.active = intensity > 0.05;
+    // Fixed: when intensity 0, hide completely to avoid visible rain at 0
     this.points.visible = this.active;
     this.lines.visible = this.active && intensity > 0.3;
     
     if (this.active) {
-      this.points.material.opacity = intensity * 0.45;
-      this.lines.material.opacity = intensity * 0.35;
+      this.points.material.opacity = Math.min(0.55, intensity * 0.55);
+      this.lines.material.opacity = Math.min(0.45, intensity * 0.45);
       
       // Center rain around player
       if (playerPos) {
-        // Move system to follow player slightly - keep rain around them
         this.points.position.set(playerPos.x*0.1, 0, playerPos.z*0.1);
         this.lines.position.set(playerPos.x, 0, playerPos.z);
       }
     } else {
+      this.points.visible = false;
+      this.lines.visible = false;
       this.points.material.opacity = 0;
       this.lines.material.opacity = 0;
     }
@@ -273,6 +275,7 @@ export class EarthquakeVisuals {
     this.active = false;
     this.intensity = 0;
     this.timer = 0;
+    this._elapsed = 0;
     this.originalFogNear = null;
     this.originalFogFar = null;
   }
@@ -291,15 +294,14 @@ export class EarthquakeVisuals {
   update(dt, player, buildingGroups, dustSystem) {
     if (!this.active) return;
 
+    this._elapsed += dt;
     this.timer -= dt;
-    const shake = this.intensity * (0.5 + Math.sin(Date.now()*0.02)*0.5);
+    const shake = this.intensity * (0.5 + Math.sin(this._elapsed*20)*0.5);
 
     // Camera shake - directly modify camera if player locked
     if (player && player.locked) {
-      // Shake is handled in player.js via extra offset, but we add here as well
-      // For now, shake via camera position jitter is done in soundscape, here we do FOV pulse
       if (this.camera) {
-        this.camera.fov = 75 + Math.sin(Date.now()*0.03)*shake*1.5;
+        this.camera.fov = 75 + Math.sin(this._elapsed*30)*shake*1.5;
         this.camera.updateProjectionMatrix();
       }
     }
@@ -307,7 +309,6 @@ export class EarthquakeVisuals {
     // Dust intensify
     if (dustSystem && dustSystem.points) {
       dustSystem.points.material.opacity = 0.35 + this.intensity*0.5 + Math.random()*0.2;
-      // Increase dust movement
       const wind = new THREE.Vector3((Math.random()-0.5)*shake*2, 0, (Math.random()-0.5)*shake*2);
       dustSystem.update(dt, wind);
     }
@@ -318,8 +319,8 @@ export class EarthquakeVisuals {
         if (!g.userData.originalRot) {
           g.userData.originalRot = g.rotation.clone();
         }
-        g.rotation.z = g.userData.originalRot.z + Math.sin(Date.now()*0.015 + g.position.x*0.01)*shake*0.02;
-        g.rotation.x = g.userData.originalRot.x + Math.cos(Date.now()*0.012 + g.position.z*0.01)*shake*0.015;
+        g.rotation.z = g.userData.originalRot.z + Math.sin(this._elapsed*15 + g.position.x*0.01)*shake*0.02;
+        g.rotation.x = g.userData.originalRot.x + Math.cos(this._elapsed*12 + g.position.z*0.01)*shake*0.015;
       }
     }
 

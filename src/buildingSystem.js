@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { MAT } from './materials.js';
 import { colliders } from './world.js';
+import { validateBuildings } from './anticheat.js';
 
 export const BUILD_RECIPES = {
   wall: { name: 'Wooden Palisade', cost: { wood: 5, gold: 10 }, hp: 100, size: {w:3,h:2.5,d:0.5}, icon: '🪵' },
@@ -29,11 +30,24 @@ export class BuildingSystem {
 
   load() {
     try {
-      const saved = JSON.parse(localStorage.getItem('kitchuban_buildings') || '[]');
+      const raw = JSON.parse(localStorage.getItem('kitchuban_buildings') || '[]');
+      const saved = validateBuildings(raw);
+      if (saved.length !== raw.length) {
+        // Save cleaned list
+        localStorage.setItem('kitchuban_buildings', JSON.stringify(saved.map(b=>({type:b.type,x:b.x,z:b.z,ry:b.ry}))));
+      }
       for (const b of saved) {
+        // Extra collision check on load to prevent building inside colliders abuse
+        if (this.checkCollision(b.x, b.z, b.type)) {
+          console.warn(`[ANTICHEAT] Skipped loading building inside collider at ${b.x},${b.z}`);
+          continue;
+        }
         this.placeBuilding(b.type, b.x, b.z, b.ry||0, false); // false = don't pay again
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[BUILD] Load failed, resetting', e);
+      localStorage.removeItem('kitchuban_buildings');
+    }
   }
 
   save() {
@@ -92,6 +106,9 @@ export class BuildingSystem {
 
   checkCollision(x, z, type) {
     const recipe = BUILD_RECIPES[type];
+    if (!recipe) return true;
+    // Bounds check - prevent building outside map abuse
+    if (Math.abs(x) > 898 || Math.abs(z) > 698) return true;
     const w = recipe.size.w, d = recipe.size.d||recipe.size.w;
     const box = new THREE.Box3(new THREE.Vector3(x-w/2,0,z-d/2), new THREE.Vector3(x+w/2, recipe.size.h, z+d/2));
     for (const c of colliders) if (box.intersectsBox(c)) return true;
@@ -100,6 +117,8 @@ export class BuildingSystem {
       const bBox = new THREE.Box3(new THREE.Vector3(b.x-bw/2,0,b.z-bd/2), new THREE.Vector3(b.x+bw/2, BUILD_RECIPES[b.type].size.h, b.z+bd/2));
       if (box.intersectsBox(bBox)) return true;
     }
+    // Prevent building too close to spawn points or faction zones (anti-spawn-camp)
+    if (Math.abs(x) < 15 && Math.abs(z) < 15) return true; // Forum center protected
     return false;
   }
 

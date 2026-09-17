@@ -1,7 +1,9 @@
 /**
  * Kitchuban Crafting - EVERYONE CAN CRAFT, NO ADMINS, NO MODS, EQUAL
  * Gather resources and craft weapons, tools, armor
+ * Anti-cheat caps added
  */
+import { MAX_CAPS, validateDamageMult, validateShieldMult } from './anticheat.js';
 
 export const CRAFT_RECIPES = {
   pilum: { name: 'Pilum', cost: { wood: 2, weapons: 1, gold: 15 }, result: { pila: 1 }, icon: '🪓' },
@@ -46,14 +48,21 @@ export class CraftingManager {
       this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + recipe.result.stamina);
       resultMsg = `+${recipe.result.stamina} Stamina!`;
     } else if (recipe.result.damage) {
-      resultMsg = `Gladius damage +20%! (permanent)`;
-      // Could store upgrade
-      const current = parseFloat(localStorage.getItem('kitchuban_damage_mult')||'1');
-      localStorage.setItem('kitchuban_damage_mult', (current * recipe.result.damage).toString());
+      const current = validateDamageMult();
+      const next = Math.min(MAX_CAPS.damage_mult, current * recipe.result.damage);
+      if (next <= current) {
+        return { ok: false, reason: `Max damage multiplier reached (${MAX_CAPS.damage_mult}x)` };
+      }
+      localStorage.setItem('kitchuban_damage_mult', next.toString());
+      resultMsg = `Gladius damage +20%! Now ${next.toFixed(2)}x (max ${MAX_CAPS.damage_mult}x)`;
     } else if (recipe.result.shield) {
-      resultMsg = `Shield stronger!`;
-      const current = parseFloat(localStorage.getItem('kitchuban_shield_mult')||'1');
-      localStorage.setItem('kitchuban_shield_mult', (current * recipe.result.shield).toString());
+      const current = validateShieldMult();
+      const next = Math.min(MAX_CAPS.shield_mult, current * recipe.result.shield);
+      if (next <= current) {
+        return { ok: false, reason: `Max shield multiplier reached (${MAX_CAPS.shield_mult}x)` };
+      }
+      localStorage.setItem('kitchuban_shield_mult', next.toString());
+      resultMsg = `Shield stronger! Now ${next.toFixed(2)}x (max ${MAX_CAPS.shield_mult}x)`;
     }
     
     console.log(`[CRAFT] Crafted ${recipe.name}: ${resultMsg}`);
