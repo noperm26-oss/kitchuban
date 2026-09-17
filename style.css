@@ -1,0 +1,34 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Georgia', 'Times New Roman', serif; }
+canvas { display: block; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; color: #f4e7c5; text-shadow: 0 1px 3px #000; }
+
+#crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,240,200,0.9); box-shadow: 0 0 4px #000; }
+
+#topbar { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 32px; font-size: 14px; letter-spacing: 3px; }
+#topbar .stat span { display: block; text-align: center; font-size: 26px; color: #ffd777; letter-spacing: 1px; }
+
+#bottombar { position: absolute; left: 24px; bottom: 24px; width: 300px; }
+#healthwrap, #stamwrap { position: relative; background: rgba(0,0,0,0.5); border: 2px solid #8a6d3b; border-radius: 3px; overflow: hidden; }
+#healthwrap { height: 22px; }
+#health { height: 100%; width: 100%; background: linear-gradient(#c8102e, #7a0a1c); transition: width .15s; }
+#healthtxt { position: absolute; left: 0; right: 0; top: 0; text-align: center; font-size: 14px; line-height: 20px; font-weight: bold; }
+#stamwrap { height: 8px; margin-top: 6px; }
+#stamina { height: 100%; width: 100%; background: #d9b24a; transition: width .1s; }
+#pila { margin-top: 10px; font-size: 16px; letter-spacing: 2px; }
+#pila span { color: #ffd777; font-size: 20px; }
+
+#message { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); font-size: 44px; letter-spacing: 6px; color: #ffd777; opacity: 0; transition: opacity .4s; text-align: center; }
+#damage { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(180,0,0,0.6) 100%); opacity: 0; transition: opacity .15s; }
+
+#menu { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(40,20,10,0.75), rgba(0,0,0,0.92)); color: #f4e7c5; z-index: 10; }
+.panel { text-align: center; max-width: 560px; padding: 40px; border: 3px double #b08d47; background: rgba(20,10,5,0.75); }
+.panel h1 { font-size: 52px; letter-spacing: 10px; color: #ffd777; margin-bottom: 8px; }
+.panel .sub { font-style: italic; color: #d8c8a0; margin-bottom: 24px; }
+.controls { list-style: none; text-align: left; display: inline-block; line-height: 1.9; font-size: 15px; }
+.controls b { color: #ffd777; }
+.note { margin: 18px 0; font-size: 13px; color: #a89670; letter-spacing: 1px; }
+#play { font-family: inherit; font-size: 20px; letter-spacing: 4px; padding: 14px 36px; background: #8a1c1c; color: #ffd777; border: 2px solid #ffd777; cursor: pointer; }
+#play:hover { background: #a82424; }
+#deathmsg { margin-top: 16px; color: #ff8a8a; font-size: 18px; }
