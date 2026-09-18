@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { buildWorld, torches as torchPositions, spawnPoints, factionZones, buildingInteriors } from './world.js';
-import { Player, PLAYER_ROLES } from './player.js';
+import { Player, PLAYER_ROLES, findFreeSpot } from './player.js';
 import { Enemy, Pilum, Arrow, ENEMY_ROLES, FACTIONS, enemyStuckDetector } from './enemy.js';
 import { SkySystem } from './sky.js';
 import { DustSystem, Torch, SparkSystem, BloodDecalSystem } from './particles.js';
@@ -24,34 +24,8 @@ import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-// Loading - FULL EMPIRE + SOUNDS + STORY + FIXES
-const loadProgress = document.getElementById('load-progress');
-const loadText = document.getElementById('load-text');
-const loadingEl = document.getElementById('loading');
-function setLoad(pct, txt) {
-  if (loadProgress) loadProgress.style.width = pct + '%';
-  if (loadText) loadText.textContent = txt + ` ${Math.round(pct)}%`;
-}
-setLoad(5, 'Loading Three.js core - animations, voices, story, anti-cheat');
-await new Promise(r => setTimeout(r, 60));
-setLoad(14, 'Generating PBR materials + nice audio synthesis + varied voices 14 profiles');
-await new Promise(r => setTimeout(r, 70));
-setLoad(24, 'Carving fluted columns & Corinthian capitals - verified dims + earthquake sway registration');
-await new Promise(r => setTimeout(r, 60));
-setLoad(34, 'Building Forum: Saturn 22.5x40x9, Vesta 20 cols sacred fire crackle, Jupiter 3 cellae crowd varied voices');
-await new Promise(r => setTimeout(r, 80));
-setLoad(44, 'Missing Forum: Vespasian Titus 22x33m 15.2m, Antoninus Faustina 17m, Romulus 15m bronze doors creak, Concord 45x24m + aqueduct flow animated');
-await new Promise(r => setTimeout(r, 80));
-setLoad(54, 'Arches: Septimius 23x25x11.85, Titus 15.4x13.5x4.75 - wind flag flap + earthquake sway + door jam');
-await new Promise(r => setTimeout(r, 70));
-setLoad(64, 'Sacred: Regia 3 rooms, Umbilicus, Milliarium gilded, Lapis Niger - unique priest/vestal voices + story chapter Arrival');
-await new Promise(r => setTimeout(r, 70));
-setLoad(72, 'Empire: Pantheon dome 43.44m oculus echo reverb, Baths Diocletian 376x361 water dripping, Markets haggling, story Shadows Subura');
-await new Promise(r => setTimeout(r, 80));
-setLoad(80, 'Mausoleums: Augustus 87m, Hadrian 89m, Domus Aurea golden echo, Palatine - noble/guard voices, story Fire Earthquake Storm');
-await new Promise(r => setTimeout(r, 70));
-setLoad(86, 'Weather: rain 3500 drops + 600 streaks, lightning branching bolts, earthquake rumble 20Hz + dust burst + building sway + anti-cheat caps + stuck detector + projectile raycast');
-
+// Instant boot: no loading screen, no artificial delays. The menu is ready immediately and
+// the ENTER button starts the game as soon as the world exists (see startGame below).
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -67,18 +41,18 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 scene.add(camera);
 scene.fog = new THREE.Fog(0xe8c9a0, 150, 900);
 
-setLoad(90, 'Building FULL ROMAN EMPIRE 1800x1400 + animations everywhere + sounds everywhere + story + anti-cheat fixes');
 const worldInfo = buildWorld(scene);
 console.log('[WORLD] FULL ROMAN EMPIRE Static:', worldInfo.bounds, 'spawns', spawnPoints.length, 'interiors', buildingInteriors.length, 'factions', Object.keys(factionZones).length, 'colliders', 'no noclip - VERIFIED DIMENSIONS - animations everywhere + sounds everywhere + story');
 
-setLoad(94, 'Lighting torches, sky, dust, rain, lightning, earthquake, faction flags, civilians unique voices, story, dialogue');
 const hemi = new THREE.HemisphereLight(0xfff1d6, 0x6b5a3e, 0.72); scene.add(hemi);
 const sunLight = new THREE.DirectionalLight(0xffe2b0, 2.6);
 sunLight.position.set(90, 120, -60); sunLight.castShadow = true;
 sunLight.shadow.mapSize.set(2048, 2048);
-sunLight.shadow.camera.left = sunLight.shadow.camera.bottom = -500;
-sunLight.shadow.camera.right = sunLight.shadow.camera.top = 500;
-sunLight.shadow.camera.far = 1100; sunLight.shadow.camera.near = 1;
+// A tight shadow frustum that follows the player: sharper shadows and far less
+// geometry to re-render into the shadow map every frame than a 1000m-wide box.
+sunLight.shadow.camera.left = sunLight.shadow.camera.bottom = -110;
+sunLight.shadow.camera.right = sunLight.shadow.camera.top = 110;
+sunLight.shadow.camera.far = 420; sunLight.shadow.camera.near = 1;
 sunLight.shadow.bias = -0.0006; sunLight.shadow.normalBias = 0.02;
 scene.add(sunLight); scene.add(sunLight.target);
 const fillLight = new THREE.DirectionalLight(0xc0d0ff, 0.42); fillLight.position.set(-50, 35, 70); scene.add(fillLight);
@@ -96,7 +70,6 @@ const rainSystem = new RainSystem(scene, 3500);
 const lightningSystem = new LightningSystem(scene);
 const earthquakeVisuals = new EarthquakeVisuals(scene, camera);
 
-setLoad(97, 'Forging combat: stab/slash/chop varied voices, parry slow-mo, building hammer, crafting capped, quests, economy capped, story 9 chapters, dialogue varied, anti-cheat, stuck detector, projectile raycast');
 const player = new Player(camera, renderer.domElement);
 
 // Validate damage/shield mult anti-cheat
@@ -115,9 +88,32 @@ const storyManager = new StoryManager(player, factionZones, buildingInteriors, s
 const dialogueManager = new DialogueManager(soundscape);
 const inventoryManager = new InventoryManager(economyManager, craftingManager, dialogueManager, soundscape);
 
+// ------------------------------------------------------------------- lights
+// The city creates hundreds of torches/fires that each carry a real PointLight.
+// three.js pushes every visible light into every lit material's shader, so that
+// many lights either fails to compile or crawls. Keep a constant budget of the
+// nearest lights switched on - a constant count means shaders are built once.
+const MAX_ACTIVE_POINT_LIGHTS = 12;
+const alwaysOnLights = new Set([lightningSystem.flashLight, soundscape.lightningLight].filter(Boolean));
+const lightPool = [];
+scene.traverse(o => { if (o.isPointLight && !alwaysOnLights.has(o)) lightPool.push(o); });
+const lightProbe = new THREE.Vector3();
+let lightRefreshTimer = 0;
+function updateLightBudget(dt) {
+  if (lightPool.length <= MAX_ACTIVE_POINT_LIGHTS) return;
+  lightRefreshTimer -= dt;
+  if (lightRefreshTimer > 0) return;
+  lightRefreshTimer = 0.4;
+  if (!player.position) return;
+  for (const l of lightPool) l.userData.lightDist = l.getWorldPosition(lightProbe).distanceToSquared(player.position);
+  lightPool.sort((a, b) => a.userData.lightDist - b.userData.lightDist);
+  for (let i = 0; i < lightPool.length; i++) lightPool[i].visible = i < MAX_ACTIVE_POINT_LIGHTS;
+}
+updateLightBudget(10);
+console.log(`[LIGHTS] ${lightPool.length} dynamic point lights found - keeping the ${MAX_ACTIVE_POINT_LIGHTS} nearest visible`);
+
 console.log('[GAME] Managers: quests', questManager.getActiveQuests().length, 'economy nodes', economyManager.resourceNodes.length, 'build', Object.keys(BUILD_RECIPES).length, 'craft', Object.keys(CRAFT_RECIPES).length, 'civilians 65 UNIQUE VOICES, story', storyManager.getCurrentChapter().title, 'dialogue varied, anti-cheat caps', MAX_CAPS.gold, 'gold max, damage max', MAX_CAPS.damage_mult);
 
-setLoad(99, 'Post-processing bloom+SSAO+color grading + weather flashes + story');
 let composer, bloomPass, ssaoPass, outputPass, colorGradePass;
 let quality = localStorage.getItem('kitchuban_quality') || 'medium';
 const qualitySelect = document.getElementById('quality');
@@ -149,9 +145,6 @@ function setupComposer() {
 }
 setupComposer();
 
-setLoad(100, 'Ready — FULL EMPIRE + SOUNDS + STORY + FIXES - Varied Voices, Earthquake, Storm, Anti-Cheat, No Bugs');
-await new Promise(r => setTimeout(r, 500));
-if (loadingEl) { loadingEl.style.opacity = '0'; setTimeout(() => loadingEl.style.display = 'none', 700); }
 
 // UI
 const ui = {
@@ -309,10 +302,38 @@ document.addEventListener('keydown', (e) => {
     storyManager.setChoice('rebels');
     showMessage('Story Choice: Join Rebels! Rebel rough aggressive voices!', 4);
   }
+  if (e.code === 'Escape') {
+    pauseGame();
+  }
 });
 
 let enemies = [], pila = [], arrows = [];
-let wave = 0, kills = 0, running = false, waveCooldown = 0, footstepTimer = 0;
+let wave = 0, kills = 0, running = false, waveCooldown = 0, footstepTimer = 0, waveTimer = 0, hudTimer = 0;
+let spawnGraceT = 0;   // short spawn protection so entering the game is not instant death
+// Hard cap so the faction war cannot grow the crowd without bound (keeps FPS sane).
+const MAX_ENEMIES = 120;
+
+function isHostileToPlayer(e) {
+  if (!e || e.dead) return false;
+  if (e.faction === player.faction) return false;
+  return !!(FACTIONS[e.faction]?.enemies?.includes(player.faction)
+    || FACTIONS[player.faction]?.enemies?.includes(e.faction)
+    || e.faction === 'rebels' || player.faction === 'rebels');
+}
+
+function livingEnemies() {
+  let n = 0;
+  for (const e of enemies) if (!e.dead) n++;
+  return n;
+}
+
+function spawnEnemy(pos, type, faction) {
+  if (livingEnemies() >= MAX_ENEMIES) return null;
+  const safe = findFreeSpot(pos.x, pos.z, 0.2, 24, 3);
+  const e = new Enemy(scene, safe, type, faction);
+  enemies.push(e);
+  return e;
+}
 let slowMoTimer = 0, slowMoFactor = 1;
 let factionPop = {};
 let kingOrderTimer = 25;
@@ -337,8 +358,7 @@ function initFactions() {
       else if (fid === 'legio') type = Math.random()<0.3?'spearman':'swordsman';
       else if (fid === 'emperor') type = 'centurion';
       else type = 'swordsman';
-      const e = new Enemy(scene, pos, type, fid);
-      enemies.push(e);
+      spawnEnemy(pos, type, fid);
       factionPop[fid]++;
     }
   }
@@ -375,10 +395,8 @@ function issueKingOrder() {
   if (targetZone && fromZone2) {
     for (let i=0;i<5;i++) {
       const pos = new THREE.Vector3(fromZone2.x + (Math.random()-0.5)*12, 0, fromZone2.z + (Math.random()-0.5)*12);
-      const e = new Enemy(scene, pos, 'spearman', order.to);
-      e.wander.set(targetZone.x - fromZone2.x, 0, targetZone.z - fromZone2.z).normalize().multiplyScalar(e.speed);
-      e.wanderT = 12;
-      enemies.push(e);
+      const e = spawnEnemy(pos, 'spearman', order.to);
+      if (e) { e.wander.set(targetZone.x - fromZone2.x, 0, targetZone.z - fromZone2.z).normalize().multiplyScalar(e.speed); e.wanderT = 12; }
     }
   }
 }
@@ -392,8 +410,7 @@ function surpriseFactionAttack() {
   for (let i=0;i<count;i++) {
     const pos = center.clone().add(new THREE.Vector3((Math.random()-0.5)*8,0,(Math.random()-0.5)*8));
     pos.x = Math.max(-898, Math.min(898, pos.x)); pos.z = Math.max(-698, Math.min(698, pos.z));
-    const e = new Enemy(scene, pos, 'rebel', attacker);
-    enemies.push(e);
+    spawnEnemy(pos, 'rebel', attacker);
   }
   showMessage(`SURPRISE! ${FACTIONS[attacker]?.name} ambush! Varied war cries unique per soldier!`, 5); 
   soundscape.playFactionShout(attacker, center.x, 1.8, center.z);
@@ -403,7 +420,7 @@ function surpriseFactionAttack() {
 function factionWarUpdate(dt) {
   factionWarTimer -= dt;
   if (factionWarTimer <= 0) {
-    factionWarTimer = 5;
+    factionWarTimer = 14;
     const counts = {}; for (const f of Object.keys(FACTIONS)) counts[f]=0;
     for (const e of enemies) if (!e.dead && e.faction) counts[e.faction]++;
     factionPop = counts;
@@ -413,10 +430,8 @@ function factionWarUpdate(dt) {
       if (legioZone && rebelZone) {
         for (let i=0;i<3;i++) {
           const pos = new THREE.Vector3(legioZone.x + (Math.random()-0.5)*10,0,legioZone.z + (Math.random()-0.5)*10);
-          const e = new Enemy(scene, pos, 'spearman', 'legio');
-          e.wander.set(rebelZone.x - legioZone.x,0,rebelZone.z - legioZone.z).normalize().multiplyScalar(e.speed);
-          e.wanderT = 10;
-          enemies.push(e);
+          const e = spawnEnemy(pos, 'spearman', 'legio');
+          if (e) { e.wander.set(rebelZone.x - legioZone.x,0,rebelZone.z - legioZone.z).normalize().multiplyScalar(e.speed); e.wanderT = 10; }
         }
         if (Math.random()<0.4) {
           showMessage('Faction War: Legio counter-attacks Rebel Subura! War cries varied unique!',3.5);
@@ -428,9 +443,12 @@ function factionWarUpdate(dt) {
 }
 
 function spawnWave() {
+  const slots = MAX_ENEMIES - livingEnemies();
+  if (slots < 3) { waveCooldown = 4; return; }   // armada already huge - retry shortly
   wave++;
   const isBossWave = wave % 5 === 0;
   let count = 6 + wave * 2.8; if (isBossWave) count+=6; count=Math.floor(count);
+  count = Math.min(count, slots);
   for (let i=0;i<count;i++) {
     const sp = spawnPoints[Math.floor(Math.random()*spawnPoints.length)];
     const pos = new THREE.Vector3(sp[0] + (Math.random()-0.5)*14, 0, sp[1] + (Math.random()-0.5)*14);
@@ -447,7 +465,8 @@ function spawnWave() {
       else type='swordsman';
     }
     if (isBossWave && i===0) { type='centurion'; faction='legio'; }
-    enemies.push(new Enemy(scene, pos, type, faction));
+    const spawned = spawnEnemy(pos, type, faction);
+    if (spawned) spawned.wave = wave;
   }
   if (player.role==='sagittarius') player.pila=Math.min(MAX_CAPS.pila, player.pila+10); else player.pila=Math.min(player.roleData.pila+4, player.pila+3);
   if (player.pila > MAX_CAPS.pila) player.pila = MAX_CAPS.pila;
@@ -466,26 +485,88 @@ function resetGame() {
   enemies=[]; pila=[]; arrows=[]; wave=0; kills=0;
   player.applyRole(selectedRole);
   const ownZone = factionZones[player.faction] || factionZones.legio;
-  if (ownZone) player.position.set(ownZone.x + (Math.random()-0.5)*8, 1.75, ownZone.z + (Math.random()-0.5)*8);
-  else player.position.set(0,1.75,55);
+  if (ownZone) player.position.copy(findFreeSpot(ownZone.x + (Math.random()-0.5)*8, ownZone.z + (Math.random()-0.5)*8));
+  else player.position.copy(findFreeSpot(0, 55));
   player.velocity.set(0,0,0); player.yaw=0; player.pitch=0;
-  waveCooldown=2.2; slowMoTimer=0; slowMoFactor=1;
+  waveCooldown=2.2; waveTimer=0; spawnGraceT=4; slowMoTimer=0; slowMoFactor=1;
   kingOrderTimer=20; surpriseAttackTimer=28; factionWarTimer=3; warEvents=[];
   initFactions();
 }
 
-ui.play.addEventListener('click', () => {
-  if (player.health <= 0 || wave === 0) resetGame();
-  soundscape.ensureAudio();
-  soundscape.startWeatherLoop();
-  renderer.domElement.requestPointerLock();
-});
+// ---------------------------------------------------------------- game start
+// The ENTER button always works: it starts the game immediately (no loading screen,
+// no waits). Pointer lock is only a nicety - if the browser refuses it (for example
+// inside an iframe that was not allowed to use pointer lock) the game keeps running
+// and mouse movement still steers the camera.
+let gameStarted = false;
+let pointerLockActive = false;
+let lookFallback = false;
+let lockWatchdog = null;
+
+function enableLookFallback() {
+  if (lookFallback || !running) return;
+  lookFallback = true;
+  pointerLockActive = false;
+  player.setLookFallback(true);
+  showMessage('Mouse-look active - move the mouse to look around, ESC pauses.', 6);
+}
+
+function tryPointerLock() {
+  const el = renderer.domElement;
+  if (document.pointerLockElement === el) return;
+  clearTimeout(lockWatchdog);
+  try {
+    const res = el.requestPointerLock();
+    if (res && typeof res.catch === 'function') res.catch(() => enableLookFallback());
+  } catch (e) {
+    enableLookFallback();
+    return;
+  }
+  lockWatchdog = setTimeout(() => { if (document.pointerLockElement !== el) enableLookFallback(); }, 700);
+}
+
+function startGame() {
+  if (!gameStarted || player.health <= 0) { resetGame(); gameStarted = true; }
+  ui.death.textContent = '';
+  ui.play.textContent = 'RESUME';
+  ui.menu.style.display = 'none';
+  running = true;
+  lookFallback = false;
+  pointerLockActive = false;
+  player.setLookFallback(false);
+  player.setActive(true);          // playable immediately, lock or no lock
+  try { soundscape.ensureAudio(); soundscape.startWeatherLoop(); } catch (e) { console.warn('[AUDIO] unavailable', e); }
+  tryPointerLock();
+  showMessage('WASD move - LMB strike - RMB block/parry - F throw pilum - B build - I inventory', 5);
+}
+
+function pauseGame() {
+  if (!running) return;
+  running = false;
+  clearTimeout(lockWatchdog);
+  player.setActive(false);
+  ui.menu.style.display = 'flex';
+  if (player.health > 0) ui.play.textContent = 'RESUME';
+  if (document.pointerLockElement) { try { document.exitPointerLock(); } catch (e) {} }
+}
+
+ui.play.addEventListener('click', startGame);
 document.addEventListener('pointerlockchange', () => {
-  player.locked = document.pointerLockElement === renderer.domElement;
-  running = player.locked;
-  ui.menu.style.display = running ? 'none' : 'flex';
-  if (!running && player.health>0 && wave>0){ ui.play.textContent='RESUME'; ui.death.textContent=''; }
+  const locked = document.pointerLockElement === renderer.domElement;
+  if (locked) {
+    clearTimeout(lockWatchdog);
+    pointerLockActive = true;
+    lookFallback = false;
+    player.setLookFallback(false);
+    if (running) player.setActive(true);
+  } else if (pointerLockActive) {
+    // The lock was released (ESC) -> pause. If it never engaged we are in
+    // mouse-look fallback mode and the game simply keeps running.
+    pointerLockActive = false;
+    pauseGame();
+  }
 });
+document.addEventListener('pointerlockerror', enableLookFallback);
 
 function meleeHit() {
   const fwd = player.forward; const hits=[];
@@ -526,7 +607,8 @@ function updateQuestUI() {
 function updateMinimap() {
   if (!ui.minimap) return;
   const canvas = ui.minimap;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext && canvas.getContext('2d');
+  if (!ctx) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#2a1a0a'; ctx.fillRect(0,0,canvas.width,canvas.height);
   for (const [fid, zone] of Object.entries(factionZones)) {
@@ -545,7 +627,7 @@ function updateMinimap() {
     if (e.position.distanceTo(player.position) > 100) continue;
     const ex = ((e.position.x / 900) * 0.5 + 0.5) * canvas.width;
     const ez = ((e.position.z / 700) * 0.5 + 0.5) * canvas.height;
-    const isEnemy = FACTIONS[e.faction]?.enemies?.includes(player.faction) || e.faction==='rebels';
+    const isEnemy = isHostileToPlayer(e);
     ctx.fillStyle=isEnemy?'#ff4444':'#44ff44';
     ctx.fillRect(ex-1,ez-1,2,2);
   }
@@ -577,6 +659,11 @@ function tick(){
   if(slowMoTimer>0){ slowMoTimer-=dt; slowMoFactor=0.16; if(slowMoTimer<=0) slowMoFactor=1; } else slowMoFactor=1;
   dt*=slowMoFactor;
 
+  updateLightBudget(dt);
+  // Sun + shadow frustum follow the player
+  sunLight.position.set(player.position.x + 90, 120, player.position.z - 60);
+  sunLight.target.position.set(player.position.x, 0, player.position.z);
+  sunLight.target.updateMatrixWorld();
   skySystem.update(dt);
   dustSystem.update(dt, new THREE.Vector3(Math.sin(elapsed*0.07)*0.24 + soundscape.weather.windIntensity*0.5,0,Math.cos(elapsed*0.05)*0.14));
   for(const t of torchObjects) t.update(dt); 
@@ -618,6 +705,7 @@ function tick(){
       } 
     }
 
+    spawnGraceT = Math.max(0, spawnGraceT - dt);
     kingOrderTimer-=dt; if(kingOrderTimer<=0){ kingOrderTimer=38+Math.random()*22; issueKingOrder(); }
     surpriseAttackTimer-=dt; if(surpriseAttackTimer<=0){ surpriseAttackTimer=32+Math.random()*28; if(Math.random()<0.85) surpriseFactionAttack(); }
     factionWarUpdate(dt);
@@ -713,9 +801,7 @@ function tick(){
       enemyStuckDetector.check(e, dt);
       const ev=e.update(dt,player,enemies,arrows);
       if(ev){
-        const enemyFacData = FACTIONS[e.faction];
-        const isEnemyToPlayer = enemyFacData?.enemies?.includes(player.faction) || player.faction === 'rebels' || e.faction === 'rebels' || (FACTIONS[player.faction]?.enemies?.includes(e.faction));
-        if (isEnemyToPlayer) {
+        if (isHostileToPlayer(e) && spawnGraceT <= 0) {
           const r=player.takeDamage(ev.damage, ev.dir);
           if(r==='blocked') soundscape.playCombatSound('block', player.position.x, player.position.y, player.position.z);
           else if(r==='parried'){ soundscape.playCombatSound('parry', player.position.x, player.position.y, player.position.z); showParry(); slowMoTimer=0.8; } 
@@ -741,13 +827,25 @@ function tick(){
     }
 
     enemies=enemies.filter(e=>!e.removed);
-    const alive=enemies.filter(e=>!e.dead && (FACTIONS[e.faction]?.enemies?.includes(player.faction) || e.faction==='rebels' || player.faction==='rebels' || FACTIONS[player.faction]?.enemies?.includes(e.faction))).length;
-    const totalAlive = enemies.filter(e=>!e.dead).length;
-    if(totalAlive < 8){ waveCooldown-=dt; if(waveCooldown<=0){ spawnWave(); waveCooldown=6.5; if(wave>1) player.health=Math.min(player.maxHealth, player.health+28); } }
+    const alive=enemies.filter(isHostileToPlayer).length;
+    const totalAlive = livingEnemies();
+    // Wave progression: the next wave arrives once this one is cleared (a couple of
+    // stragglers do not count) - or after the wave has dragged on for too long.
+    waveTimer += dt;
+    let waveAlive = 0;
+    for (const e of enemies) if (!e.dead && e.wave) waveAlive++;
+    if (waveAlive <= 2 || waveTimer > 75) {
+      waveCooldown-=dt;
+      if(waveCooldown<=0){ spawnWave(); waveCooldown=6.5; waveTimer=0; if(wave>1) player.health=Math.min(player.maxHealth, player.health+28); }
+    }
 
     if(player.health<=0){
-      document.exitPointerLock(); ui.play.textContent='FIGHT AGAIN';
-      ui.death.textContent=`You fell as ${player.roleData.name} of ${FACTIONS[player.faction]?.name} Lv${questManager.level} on wave ${toRoman(wave)} with ${kills} slain. Gold:${questManager.gold} - Story: ${storyManager.getCurrentChapter().title}`;
+      running = false; gameStarted = false;
+      clearTimeout(lockWatchdog);
+      player.setActive(false);
+      ui.menu.style.display='flex'; ui.play.textContent='FIGHT AGAIN';
+      ui.death.textContent=`You fell as ${player.roleData.name} of ${FACTIONS[player.faction]?.name} Lv${questManager.level} on wave ${toRoman(Math.max(1,wave))} with ${kills} slain. Gold:${questManager.gold} - Story: ${storyManager.getCurrentChapter().title}`;
+      if (document.pointerLockElement) { try { document.exitPointerLock(); } catch (e) {} }
       soundscape.playCombatSound('hurt', player.position.x, player.position.y, player.position.z);
       const hs=parseInt(localStorage.getItem('kitchuban_high')||'0');
       if(kills>hs){ localStorage.setItem('kitchuban_high',kills); localStorage.setItem('kitchuban_high_wave',wave); }
@@ -760,9 +858,10 @@ function tick(){
     ui.healthtxt.textContent=Math.ceil(player.health);
     ui.stamina.style.width=(player.stamina/player.maxStamina*100)+'%';
     ui.pila.textContent=player.pila;
-    updateQuestUI();
-    updateMinimap();
-    updateWeatherUI();
+    // The quest panel / minimap / status line are expensive (innerHTML + canvas
+    // redraws) - refresh them a few times per second instead of every frame.
+    hudTimer -= dt;
+    if (hudTimer <= 0) { hudTimer = 0.25; updateQuestUI(); updateMinimap(); updateWeatherUI(); }
 
     if (Math.random()<0.08) {
       const nearTorches = torchPositions.filter(tp => Math.hypot(tp.x-player.position.x, tp.z-player.position.z) < 25);
@@ -800,5 +899,20 @@ function tick(){
 tick();
 
 window.addEventListener('resize', ()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); if(composer) composer.setSize(window.innerWidth,window.innerHeight); });
+
+// Small debug/testing handle: lets you inspect (and script) the running game from
+// the browser console, and lets the automated smoke tests drive real gameplay.
+window.__kitchuban = {
+  get scene() { return scene; },
+  get camera() { return camera; },
+  get player() { return player; },
+  get enemies() { return enemies; },
+  get pila() { return pila; },
+  get arrows() { return arrows; },
+  get wave() { return wave; },
+  get kills() { return kills; },
+  isRunning: () => running,
+  startGame, pauseGame, resetGame,
+};
 
 console.log('[VERIFY] FULL EMPIRE + SOUNDS EVERYWHERE + STORY + FIXES: 1800x1400 map, 25+ monuments verified, animations everywhere fixed (aqueduct flow, horse gallop legs, building earthquake sway, rain splash, wind intensify, door jam, statue sway), 65 civilians UNIQUE VOICES personal pitch/formant/speed, faction voices varied unique per soldier, story 9 chapters Arrival->Shadows->Fire->Earthquake->Storm->Games->Conspiracy->CivilWar->Pax Romana with branching choices N/K/L, dialogue varied per type with mood, anti-cheat caps gold 100k grain/wood 5k marble/oil/wine/weapons 2k damage 3x shield 2.5x level 100, checksum for resources, building validation bounds + collision on load + Forum center protected + spawn-camp prevention, projectile raycast to prevent tunneling thin walls, stuck detector unstuck enemies 3s, footstep surface detection marble/travertine/ground/water, rain 3500 drops + 600 streaks centered player, lightning branching bolts, earthquake 20Hz rumble + building sway + dust + FOV pulse + fog, wind LFO, positional 3D HRTF, reverb hall, ambient loops 11 locations, test keys T thunder Y earthquake N/K/L story choice E talk');

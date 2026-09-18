@@ -20,6 +20,12 @@ export const animatedAqueducts = [];
 export const animatedBuildings = []; // For earthquake sway
 
 let globalTime = 0;
+// Per-vertex (flag cloth, water surface) deformation is expensive: run it at a
+// fixed 20 Hz instead of every frame, only for things near the player, and only
+// recompute normals every other deformation pass.
+let deformTimer = 0;
+const DEFORM_INTERVAL = 0.05;
+const DEFORM_RADIUS_SQ = 150 * 150;
 let earthquakeIntensity = 0;
 let windIntensity = 0.3;
 let rainIntensity = 0;
@@ -188,17 +194,9 @@ export function createAnimatedAqueductWater(scene, x1, z1, x2, z2, y, w=1.5) {
     x1, z1, x2, z2,
   });
 
-  // Also create underlying animatedWater for compatibility
-  animatedWaters.push({
-    mesh,
-    geometry: geo,
-    originalPositions: geo.attributes.position.array.slice(),
-    timeOffset: Math.random()*Math.PI*2,
-    baseY: y,
-    w: len, d: w,
-    x: (x1+x2)/2, z: (z1+z2)/2,
-    flowDir,
-  });
+  // NOTE: the aqueduct flow is animated by the aqueduct pass above. Pushing the
+  // same mesh into animatedWaters as well made every vertex get deformed twice
+  // per frame (and the second pass simply overwrote the first).
 
   return mesh;
 }
@@ -450,10 +448,15 @@ export function registerBuildingForEarthquake(group, x, z) {
 // Main update loop - call every frame - FIXED with earthquake, wind, rain
 export function updateAnimations(dt, elapsed, playerPos = null) {
   globalTime += dt;
+  deformTimer += dt;
+  const doDeform = deformTimer >= DEFORM_INTERVAL;
+  if (doDeform) deformTimer = 0;
+  const nearPlayer = (x, z) => !playerPos || ((playerPos.x - x) * (playerPos.x - x) + (playerPos.z - z) * (playerPos.z - z)) < DEFORM_RADIUS_SQ;
   
   // Flags waving - wind + rain + earthquake
   for (const flag of animatedFlags) {
     const time = globalTime * flag.speed * (1 + windIntensity*0.8) + flag.timeOffset;
+    if (doDeform && nearPlayer(flag.x, flag.z)) {
     const positions = flag.geometry.attributes.position;
     const orig = flag.originalPositions;
     for (let i=0;i<positions.count;i++) {
@@ -469,6 +472,7 @@ export function updateAnimations(dt, elapsed, playerPos = null) {
     }
     positions.needsUpdate = true;
     flag.geometry.computeVertexNormals();
+    }
     flag.mesh.rotation.z = Math.sin(time*0.8) * 0.08 * (1+windIntensity);
     flag.pole.rotation.z = Math.sin(time*0.3) * 0.02 * windIntensity + earthquakeIntensity*0.05*Math.sin(globalTime*15);
   }
@@ -505,6 +509,7 @@ export function updateAnimations(dt, elapsed, playerPos = null) {
     const time = globalTime*0.8 + water.timeOffset;
     const rainRipple = rainIntensity * Math.sin(time*15 + water.x*0.1)*0.08;
     water.mesh.position.y = water.baseY + Math.sin(time)*0.05 + rainRipple*0.3 + earthquakeIntensity*0.02*Math.sin(globalTime*10);
+    if (!doDeform || !nearPlayer(water.x, water.z)) continue;
     const positions = water.geometry.attributes.position;
     const orig = water.originalPositions;
     for (let i=0;i<positions.count;i++) {
@@ -532,6 +537,8 @@ export function updateAnimations(dt, elapsed, playerPos = null) {
   // Aqueducts specific flow animation
   for (const aqua of animatedAqueducts) {
     const time = globalTime*1.2 + aqua.timeOffset;
+    const cx = (aqua.x1 + aqua.x2) * 0.5, cz = (aqua.z1 + aqua.z2) * 0.5;
+    if (!doDeform || !nearPlayer(cx, cz)) { aqua.mesh.position.y = aqua.baseY + Math.sin(time*0.5)*0.02; continue; }
     const positions = aqua.geometry.attributes.position;
     const orig = aqua.originalPositions;
     for (let i=0;i<positions.count;i++) {
