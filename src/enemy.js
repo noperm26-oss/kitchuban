@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { colliders, spawnPoints, factionZones } from './world.js';
 import { MAT } from './materials.js';
 import { raycastColliders, StuckDetector } from './anticheat.js';
+import { VOICE_PROFILES } from './soundscape.js';
 
 const skinMat = MAT.skin;
 const steelMat = MAT.iron;
@@ -443,7 +444,22 @@ export class Enemy {
   _resetRest(){ const r=this.rest; this.parts.armL.position.copy(r.armLPos); this.parts.armL.rotation.copy(r.armLRot); this.parts.armR.position.copy(r.armRPos); this.parts.armR.rotation.copy(r.armRRot); this.parts.weapon.position.copy(r.weaponPos); this.parts.weapon.rotation.copy(r.weaponRot); this.parts.shield.position.copy(r.shieldPos); this.parts.shield.rotation.copy(r.shieldRot); this.parts.torso.rotation.set(0,0,0); this.parts.head.rotation.set(0,0,0); }
 
   _box(pos=this.position){ const r=0.44*this.scale; return new THREE.Box3(new THREE.Vector3(pos.x-r,0.3,pos.z-r), new THREE.Vector3(pos.x+r,1.95*this.scale,pos.z+r)); }
-  _moveAxis(axis,delta){ if(delta===0)return; this.position[axis]+=delta; const box=this._box(); for(const b of colliders){ if(box.intersectsBox(b)){ if(b.max.y<0.6)continue; this.position[axis]-=delta; this.velocity[axis]*=-0.38; const other=axis==='x'?'z':'x'; this.velocity[other]+=(Math.random()-0.5)*2.6; return; } } }
+  _moveAxis(axis,delta){
+    if(delta===0)return;
+    const wasOverlapping=this._overlapping();
+    this.position[axis]+=delta;
+    if(wasOverlapping)return;   // never trap an enemy inside geometry
+    const box=this._box();
+    for(const b of colliders){
+      if(box.intersectsBox(b)){
+        if(b.max.y<0.6)continue;
+        this.position[axis]-=delta; this.velocity[axis]*=-0.38;
+        const other=axis==='x'?'z':'x'; this.velocity[other]+=(Math.random()-0.5)*2.6;
+        return;
+      }
+    }
+  }
+  _overlapping(){ const box=this._box(); for(const b of colliders){ if(b.max.y<0.6)continue; if(box.intersectsBox(b))return true; } return false; }
 }
 
 export class Pilum {

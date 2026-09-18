@@ -5,26 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kitchuban — Legio Aeterna - FULL EMPIRE - Sounds Everywhere + Varied Voices + Earthquake + Storm</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- three.js is vendored in ./vendor/three so the game boots instantly and works offline:
+       no CDN round-trip, nothing to wait for, no external failure mode. -->
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three": "./vendor/three/three.module.js",
+        "three/addons/": "./vendor/three/addons/"
       }
     }
   </script>
 </head>
 <body>
-  <div id="loading">
-    <div class="load-inner">
-      <h2>LEGIO AETERNA - FULL EMPIRE + SOUNDS EVERYWHERE</h2>
-      <p class="load-sub">Serious Roman Game - Static Client Only - Animations Everywhere - Varied Voices - Earthquake Storm Thunder</p>
-      <div class="load-bar"><div id="load-progress"></div></div>
-      <p id="load-text">Generating FULL ROMAN EMPIRE with Sounds 0%</p>
-      <p class="load-tip">Tip: B build, 1-6 select, E place, C craft, G resources, J quests, M minimap | Q bash, V dodge, RMB parry → slow-mo! | T thunder test, Y earthquake test! | Sounds: fire crackle, water flow, flag flap, chariot gallop, varied voices, storm, earthquake rumble!</p>
-    </div>
-  </div>
-
+  <!-- No loading screen: the menu below is the entry point and ENTER starts the game immediately. -->
   <div id="hud">
     <div id="crosshair"></div>
     <div id="topbar">

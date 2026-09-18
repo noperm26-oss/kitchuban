@@ -14,6 +14,27 @@ export const PLAYER_ROLES = {
   rebel: { name: 'Rebel', desc: 'Hostis — Enemy defector. 90 HP, fast attacks, buckler, 1 Pilum.', hp: 90, stamina: 125, pila: 1, speed: 6.8, sprint: 12, shield: 'buckler', weapon: 'gladius', color: 0x7a3a3a, faction: 'rebels' },
 };
 
+// Find a standing spot that is not inside any solid collider. Buildings are
+// solid boxes, so spawning inside one used to leave the player unable to move.
+export function findFreeSpot(x, z, y = PLAYER_HEIGHT, maxRadius = 40, step = 2.5) {
+  const probe = (px, pz) => {
+    const box = new THREE.Box3(
+      new THREE.Vector3(px - PLAYER_RADIUS, y - PLAYER_HEIGHT + 0.35, pz - PLAYER_RADIUS),
+      new THREE.Vector3(px + PLAYER_RADIUS, y + 0.1, pz + PLAYER_RADIUS));
+    for (const b of colliders) if (box.intersectsBox(b)) return false;
+    return true;
+  };
+  if (probe(x, z)) return new THREE.Vector3(x, y, z);
+  for (let r = step; r <= maxRadius; r += step) {
+    for (let a = 0; a < 12; a++) {
+      const ang = (a / 12) * Math.PI * 2 + r * 0.7;
+      const px = x + Math.cos(ang) * r, pz = z + Math.sin(ang) * r;
+      if (probe(px, pz)) return new THREE.Vector3(px, y, pz);
+    }
+  }
+  return new THREE.Vector3(x, y, z);
+}
+
 function lerp(a, b, t) { return a + (b - a) * t; }
 function lerpVec3(v1, v2, t, out) { out.x = lerp(v1.x, v2.x, t); out.y = lerp(v1.y, v2.y, t); out.z = lerp(v1.z, v2.z, t); return out; }
 function lerpEuler(e1, e2, t, out) { out.x = lerp(e1.x, e2.x, t); out.y = lerp(e1.y, e2.y, t); out.z = lerp(e1.z, e2.z, t); return out; }
@@ -21,12 +42,15 @@ function lerpEuler(e1, e2, t, out) { out.x = lerp(e1.x, e2.x, t); out.y = lerp(e
 export class Player {
   constructor(camera, domElement) {
     this.camera = camera; this.dom = domElement;
-    this.position = new THREE.Vector3(0, PLAYER_HEIGHT, 50);
+    this.position = findFreeSpot(0, 50);
     this.velocity = new THREE.Vector3();
     this.yaw = 0; this.pitch = 0;
     this.keys = {}; this.onGround = true;
     this.role = 'legionary'; this.applyRole('legionary');
     this.blocking = false; this.locked = false;
+    // Mouse-look fallback for windows where pointer lock is not available
+    // (for example an iframe without allow="pointer-lock"): the game stays playable.
+    this.lookFallback = false;
 
     // Animation timers
     this.attackT = 0; this.attackCooldown = 0; this.attackDidHit = false;
@@ -187,12 +211,12 @@ export class Player {
     });
     document.addEventListener('keyup', e => { this.keys[e.code] = false; });
     document.addEventListener('mousemove', e => {
-      if (!this.locked) return;
+      if (!this.canLook) return;
       this.yaw -= e.movementX * 0.0022; this.pitch -= e.movementY * 0.0022;
       this.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, this.pitch));
     });
     document.addEventListener('mousedown', e => {
-      if (!this.locked) return;
+      if (!this.canLook) return;
       if (e.button === 0) this.wantAttack = true;
       if (e.button === 2) this.blocking = true;
     });
@@ -200,6 +224,14 @@ export class Player {
     document.addEventListener('contextmenu', e => e.preventDefault());
   }
 
+  // Input only counts while the game is actually in control of the mouse: either
+  // pointer-locked, or running with the mouse-look fallback.
+  get canLook() { return this.locked || this.lookFallback; }
+  setActive(active) {
+    this.locked = active;
+    if (!active) { this.lookFallback = false; this.blocking = false; this.parryWindow = 0; this.parryActive = false; }
+  }
+  setLookFallback(on) { this.lookFallback = on; }
   get forward() { return new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw)); }
 
   update(dt) {
@@ -545,10 +577,25 @@ export class Player {
 
   _box(pos = this.position) { return new THREE.Box3(new THREE.Vector3(pos.x - PLAYER_RADIUS, pos.y - PLAYER_HEIGHT + 0.35, pos.z - PLAYER_RADIUS), new THREE.Vector3(pos.x + PLAYER_RADIUS, pos.y + 0.1, pos.z + PLAYER_RADIUS)); }
   _feetBox() { return new THREE.Box3(new THREE.Vector3(this.position.x - PLAYER_RADIUS, this.position.y - PLAYER_HEIGHT - 0.1, this.position.z - PLAYER_RADIUS), new THREE.Vector3(this.position.x + PLAYER_RADIUS, this.position.y - PLAYER_HEIGHT + 0.3, this.position.z + PLAYER_RADIUS)); }
+  _overlapping() {
+    const box = this._box();
+    for (const b of colliders) {
+      if (b.max.y < this.position.y - PLAYER_HEIGHT + 0.65) continue;
+      if (box.intersectsBox(b)) return true;
+    }
+    return false;
+  }
   _moveAxis(axis, delta) {
     if (delta === 0) return;
+    // If we are already overlapping something (bad spawn, moving geometry) do not
+    // block the move - otherwise the player could never walk free again.
+    const wasOverlapping = this._overlapping();
     this.position[axis] += delta;
+    if (wasOverlapping) return;
     const box = this._box();
-    for (const b of colliders) { if (box.intersectsBox(b)) { if (b.max.y < this.position.y - PLAYER_HEIGHT + 0.65) continue; this.position[axis] -= delta; this.velocity[axis] = 0; return; } }
+    for (const b of colliders) {
+      if (b.max.y < this.position.y - PLAYER_HEIGHT + 0.65) continue;
+      if (box.intersectsBox(b)) { this.position[axis] -= delta; this.velocity[axis] = 0; return; }
+    }
   }
 }

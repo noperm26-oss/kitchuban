@@ -346,7 +346,7 @@ function basilicaAemilia(scene, x, z, w=50, d=100, ry=0) {
   for(let row of [-1,1]){ for(let i=-d/2+5;i<d/2-2;i+=5){ flutedColumnImpl(g, row*6, i, 8, 0.44, MAT.marble); } }
   const roof=createTiledRoof(w+2,d+2,4.8); roof.position.y=topY+13; g.add(roof);
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-w/2, topY, z-d/2), new THREE.Vector3(x+w/2, topY+13, z+d/2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-w/2, topY, z-d/2), new THREE.Vector3(x+w/2, topY+13, z+d/2)));
   buildingInteriors.push({type:'basilica_aemilia', x,z, interior:true});
   createAnimatedFlag(scene, x, topY+16, z, 0xd9a441, 2.2, 1.3);
   registerBuildingForEarthquake(g, x, z);
@@ -377,7 +377,7 @@ function basilicaMaxentius(scene, x, z) {
   }
   const roof=createTiledRoof(naveW+4, naveD+6, 6); roof.position.y=vaultH+2; g.add(roof);
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-naveW/2-2,0,z-naveD/2-5), new THREE.Vector3(x+naveW/2+2, vaultH, z+naveD/2+2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-naveW/2-2,0,z-naveD/2-5), new THREE.Vector3(x+naveW/2+2, vaultH, z+naveD/2+2)));
   buildingInteriors.push({type:'basilica_maxentius', x,z, interior:true});
   createAnimatedFlag(scene, x, vaultH+6, z, 0x8a1a1a, 3, 1.8);
   createAnimatedSmoke(scene, x, 2, z, 15);
@@ -405,7 +405,7 @@ function templeCastorPollux(scene, x, z) {
   const ped=createPediment(30,2.5,4); ped.position.set(0,topY+colH+1.6+1,18); g.add(ped);
   const roof=createTiledRoof(30,40,5); roof.position.set(0,topY+colH+1.6+1,0); g.add(roof);
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-16,topY,z-20), new THREE.Vector3(x+16,topY+cellaH,z+20))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-16,topY,z-20), new THREE.Vector3(x+16,topY+cellaH,z+20)));
   buildingInteriors.push({type:'temple_castor', x,z, interior:true});
   createAnimatedFlag(scene, x, topY+colH+6, z+18, 0x2a5a8a, 2, 1.2);
   createAnimatedFire(scene, x, topY+0.5, z+12, 0.6, true);
@@ -433,7 +433,7 @@ function templeCaesar(scene, x, z) {
   const ped=createPediment(18,1.8,2.8); ped.position.set(0,topY+colH+1.1+0.8,8); g.add(ped);
   const roof=createTiledRoof(18,20,3.2); roof.position.set(0,topY+colH+1.1+0.8,0); g.add(roof);
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-lowerW/2,0,z-2), new THREE.Vector3(x+lowerW/2, lowerH+upperH+cellaH, z+lowerD/2+6))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-lowerW/2,0,z-2), new THREE.Vector3(x+lowerW/2, lowerH+upperH+cellaH, z+lowerD/2+6)));
   buildingInteriors.push({type:'temple_caesar', x,z, interior:true});
   createAnimatedFlag(scene, x, topY+colH+4, z+8, 0x8a1a1a, 1.5, 1);
   createAnimatedFire(scene, x, topY+0.5, z-2, 0.5, true);
@@ -468,7 +468,7 @@ function houseVestals(scene, x, z) {
   const numaPed=new THREE.Mesh(new THREE.BoxGeometry(1.5,1,1.5), MAT.marble); numaPed.position.set(12,0.5, -10); g.add(numaPed);
   const numa=new THREE.Mesh(new THREE.CapsuleGeometry(0.4,1.2,6,8), MAT.marble); numa.position.set(12,0.5+0.5+0.8, -10); g.add(numa);
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerW/2,0,z-outerD/2), new THREE.Vector3(x+outerW/2,outerH,z+outerD/2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerW/2,0,z-outerD/2), new THREE.Vector3(x+outerW/2,outerH,z+outerD/2)));
   buildingInteriors.push({type:'house_vestals', x,z, interior:true});
   factionZones['vestals_house'] = {x:x, z:z, w:50, d:50, color:0xffd777};
   createAnimatedFlag(scene, x, outerH+2, z+outerD/2, 0xffd777, 1.5, 1);
@@ -507,7 +507,7 @@ function domus(scene, x, z) {
     }
   }
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerW/2,0,z-outerD/2), new THREE.Vector3(x+outerW/2,outerH,z+outerD/2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerW/2,0,z-outerD/2), new THREE.Vector3(x+outerW/2,outerH,z+outerD/2)));
   buildingInteriors.push({type:'domus', x,z, interior:true});
   createAnimatedFire(scene, x-3, 0.75, z+5, 0.3, false);
   createAnimatedDoor(scene, x, 0, z+outerD/2, 2.0, 3.2, MAT.woodDark);
@@ -524,7 +524,7 @@ function fountain(scene, x, z) {
   const topWater=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,0.14,20), MAT.water); topWater.position.y=4.44; group.add(topWater);
   for(let i=0;i<4;i++){ const ang=(i/4)*Math.PI*2; const lion=new THREE.Mesh(new THREE.SphereGeometry(0.26,8,8), MAT.marble); lion.position.set(Math.cos(ang)*0.6,3.0,Math.sin(ang)*0.6); group.add(lion); }
   const mosaicRing=new THREE.Mesh(new THREE.RingGeometry(5.3,8,32), MAT.mosaic); mosaicRing.rotation.x=-Math.PI/2; mosaicRing.position.y=0.03; group.add(mosaicRing);
-  scene.add(group); colliders.push(new THREE.Box3(new THREE.Vector3(x-5.2,0,z-5.2), new THREE.Vector3(x+5.2,1.3,z+5.2))));
+  scene.add(group); colliders.push(new THREE.Box3(new THREE.Vector3(x-5.2,0,z-5.2), new THREE.Vector3(x+5.2,1.3,z+5.2)));
   createAnimatedWater(scene, x, 1.13, z, 8.8, 8.8, 0x4a8aaa);
   createAnimatedWater(scene, x, 4.45, z, 3.4, 3.4, 0x5a9acc);
   // Splash particles via smoke but water-like
@@ -544,7 +544,7 @@ function marketStalls(scene, count=24) {
     const awningMat=new THREE.MeshStandardMaterial({color:awningColors[i%awningColors.length], roughness:0.9, side:THREE.DoubleSide});
     const awning=new THREE.Mesh(new THREE.PlaneGeometry(5.4,3.6), awningMat); awning.rotation.x=Math.PI/2.2; awning.position.set(0,3.35,0); stall.add(awning);
     for(let j=0;j<3;j++){ const amph=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.24,0.60,10), MAT.terracotta); amph.position.set(-1.4+j*1.4,1.45,0.2); stall.add(amph); }
-    scene.add(stall); colliders.push(new THREE.Box3(new THREE.Vector3(x-2.4,0,z-1.4), new THREE.Vector3(x+2.4,1.3,z+1.4))));
+    scene.add(stall); colliders.push(new THREE.Box3(new THREE.Vector3(x-2.4,0,z-1.4), new THREE.Vector3(x+2.4,1.3,z+1.4)));
     // Animated awning waving
     createAnimatedFlag(scene, x, 3.35, z, awningColors[i%awningColors.length], 2.7, 1.8);
   }
@@ -562,7 +562,7 @@ function insula(scene, x, z, w=18, d=22, h=12) {
   const roof=new THREE.Mesh(new THREE.BoxGeometry(w+0.6,0.6,d+0.6), MAT.terracotta); roof.position.y=h+0.3; g.add(roof);
   const balc=new THREE.Mesh(new THREE.BoxGeometry(w*0.7,0.18,1.3), MAT.wood); balc.position.set(0,h*0.66,d/2+0.65); g.add(balc);
   scene.add(g); g.updateMatrixWorld(true); colliders.push(new THREE.Box3().setFromObject(g));
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-w*0.3,0,z+d/2-2), new THREE.Vector3(x+w*0.3,1.0,z+d/2-1))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-w*0.3,0,z+d/2-2), new THREE.Vector3(x+w*0.3,1.0,z+d/2-1)));
   if(Math.random()<0.3) createAnimatedSmoke(scene, x, h+0.5, z, 6);
   registerBuildingForEarthquake(g, x, z);
 }
@@ -583,7 +583,7 @@ function bathsCaracalla(scene, x, z) {
   const hotFloor=new THREE.Mesh(new THREE.PlaneGeometry(20,12), MAT.marble); hotFloor.rotation.x=-Math.PI/2; hotFloor.position.set(0,1.05,-15); g.add(hotFloor);
   for(let i=0;i<6;i++){ const cx=-20+i*40/5; flutedColumnImpl(g, cx, 20, 8, 0.5); flutedColumnImpl(g, cx, -20, 8, 0.5); }
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerW/2,0,z-outerD/2), new THREE.Vector3(x+outerW/2,outerH,z+outerD/2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerW/2,0,z-outerD/2), new THREE.Vector3(x+outerW/2,outerH,z+outerD/2)));
   buildingInteriors.push({type:'baths', x,z, interior:true});
   torches.push({x:x-10,y:3,z:z+20}); torches.push({x:x+10,y:3,z:z+20});
   createAnimatedSmoke(scene, x, 2, z-15, 20);
@@ -606,7 +606,7 @@ function circusMaximus(scene, x, z) {
   }
   for(let i=0;i<8;i++){ const gate=new THREE.Mesh(new THREE.BoxGeometry(1,2.5,1), MAT.woodDark); gate.position.set(-length/2+2+i*3,1.25,width/2+1); g.add(gate); }
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-length/2,0,z-width/2-5), new THREE.Vector3(x+length/2,3,z+width/2+5))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-length/2,0,z-width/2-5), new THREE.Vector3(x+length/2,3,z+width/2+5)));
   buildingInteriors.push({type:'circus', x,z, interior:true});
   // Animated chariots racing
   for(let i=0;i<6;i++){
@@ -637,7 +637,7 @@ function colosseum(scene, x, z) {
     const seats=new THREE.Mesh(new THREE.TorusGeometry(r,0.3,6,32), MAT.marble); seats.rotation.x=Math.PI/2; seats.position.y=2+r*0.15; g.add(seats);
   }
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerR1,0,z-outerR2), new THREE.Vector3(x+outerR1,height,z+outerR2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-outerR1,0,z-outerR2), new THREE.Vector3(x+outerR1,height,z+outerR2)));
   buildingInteriors.push({type:'colosseum', x,z, interior:true});
   torches.push({x:x+outerR1+2,y:3,z:z}); torches.push({x:x-outerR1-2,y:3,z:z});
   createAnimatedFlag(scene, x, height+3, z, 0x8a1a1a, 3, 1.8);
@@ -652,7 +652,7 @@ function statues(scene) {
   const spots=[[-22,22],[22,22],[-22,-32],[22,-32],[-55,-55],[55,-55],[-75,15],[75,15],[-120,60],[120,60],[-120,-60],[120,-60]];
   spots.forEach(([x,z],idx)=>{
     const ped=new THREE.Mesh(new THREE.BoxGeometry(2.6,2.6,2.6), MAT.marble); ped.position.set(x,1.3,z); ped.castShadow=true; ped.receiveShadow=true; scene.add(ped);
-    colliders.push(new THREE.Box3(new THREE.Vector3(x-1.3,0,z-1.3), new THREE.Vector3(x+1.3,2.6,z+1.3))));
+    colliders.push(new THREE.Box3(new THREE.Vector3(x-1.3,0,z-1.3), new THREE.Vector3(x+1.3,2.6,z+1.3)));
     const statue=idx%2===0?createBronzeStatue(1.1):createRomanStatue(1.1); statue.position.set(x,2.6,z); statue.rotation.y=Math.atan2(-x,-z); scene.add(statue);
     createAnimatedStatue(scene, x, 2.6, z, 1.1, idx%2===0?'bronze':'marble');
     torches.push({x:x+1.8,y:1.5,z:z});
@@ -686,7 +686,7 @@ function factionCamp(scene, x, z, faction, size=28) {
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,6,6), MAT.wood); pole.position.set(0,3,0); g.add(pole);
   const flagColor = faction==='legio'?0x8a1a1a: faction==='praetorian'?0x1a1a2a: faction==='rebels'?0x7a3a3a: faction==='senate'?0xd9a441:0x2a5a8a;
   scene.add(g); g.updateMatrixWorld(true);
-  colliders.push(new THREE.Box3(new THREE.Vector3(x-size/2,0,z-size/2), new THREE.Vector3(x+size/2,wallH,z+size/2))));
+  colliders.push(new THREE.Box3(new THREE.Vector3(x-size/2,0,z-size/2), new THREE.Vector3(x+size/2,wallH,z+size/2)));
   factionZones[faction] = {x:x, z:z, w:size, d:size, color:flagColor};
   for(let i=0;i<4;i++){ const ang=(i/4)*Math.PI*2; spawnPoints.push([x+Math.cos(ang)*(size/2+5), z+Math.sin(ang)*(size/2+5)]); }
   // Animated flag + fire for camp
@@ -740,7 +740,7 @@ export function buildWorld(scene) {
     const tower=new THREE.Mesh(new THREE.CylinderGeometry(5,5.5,18,18), MAT.brick); tower.position.set(x,9,z); tower.castShadow=true; tower.receiveShadow=true; scene.add(tower);
     const cone=new THREE.Mesh(new THREE.ConeGeometry(6,4.5,18), MAT.terracotta); cone.position.set(x,20.25,z); cone.castShadow=true; scene.add(cone);
     const balc=new THREE.Mesh(new THREE.CylinderGeometry(5.8,5.8,0.5,18), MAT.marble); balc.position.set(x,17.5,z); scene.add(balc);
-    torches.push({x:x+3.5,y:12,z:z}); colliders.push(new THREE.Box3(new THREE.Vector3(x-5.5,0,z-5.5), new THREE.Vector3(x+5.5,18,z+5.5))));
+    torches.push({x:x+3.5,y:12,z:z}); colliders.push(new THREE.Box3(new THREE.Vector3(x-5.5,0,z-5.5), new THREE.Vector3(x+5.5,18,z+5.5)));
     createAnimatedFlag(scene, x, 20, z, 0x8a1a1a, 2, 1.2);
   });
 
@@ -790,7 +790,7 @@ export function buildWorld(scene) {
     const x=-250 + (i%4)*130;
     const z=-400 - Math.floor(i/4)*100;
     const barrack=new THREE.Mesh(new THREE.BoxGeometry(22,6,12), MAT.brick); barrack.position.set(x,3,z); barrack.castShadow=true; scene.add(barrack);
-    colliders.push(new THREE.Box3(new THREE.Vector3(x-11,0,z-6), new THREE.Vector3(x+11,6,z+6))));
+    colliders.push(new THREE.Box3(new THREE.Vector3(x-11,0,z-6), new THREE.Vector3(x+11,6,z+6)));
     for(let j=0;j<3;j++){ const post=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,2,6), MAT.wood); post.position.set(x-8+j*8,1,z+8); scene.add(post); }
   }
   for(let i=0;i<10;i++){
@@ -799,7 +799,7 @@ export function buildWorld(scene) {
     const stall=new THREE.Group(); stall.position.set(x,0,z);
     const counter=new THREE.Mesh(new THREE.BoxGeometry(5,1.2,3), MAT.wood); counter.position.y=0.6; stall.add(counter);
     scene.add(stall);
-    colliders.push(new THREE.Box3(new THREE.Vector3(x-2.5,0,z-1.5), new THREE.Vector3(x+2.5,1.2,z+1.5))));
+    colliders.push(new THREE.Box3(new THREE.Vector3(x-2.5,0,z-1.5), new THREE.Vector3(x+2.5,1.2,z+1.5)));
   }
   street(scene, -W, 150, -300, 150, 6);
   street(scene, 0, D, 0, 600, 8);
@@ -827,7 +827,7 @@ export function buildWorld(scene) {
   const rostra=new THREE.Group();
   const plat=new THREE.Mesh(new THREE.BoxGeometry(20,2.2,7), MAT.marble); plat.position.set(0,1.1,-28); plat.castShadow=true; rostra.add(plat);
   for(let i=-9;i<=9;i+=2.4){ const beak=new THREE.Mesh(new THREE.ConeGeometry(0.36,1.1,8), MAT.bronze); beak.rotation.z=Math.PI/2; beak.position.set(i,1.1,-24.2); rostra.add(beak); }
-  scene.add(rostra); colliders.push(new THREE.Box3(new THREE.Vector3(-10,0,-31.5), new THREE.Vector3(10,2.2,-24.5))));
+  scene.add(rostra); colliders.push(new THREE.Box3(new THREE.Vector3(-10,0,-31.5), new THREE.Vector3(10,2.2,-24.5)));
 
   marketStalls(scene, 24);
   statues(scene);
